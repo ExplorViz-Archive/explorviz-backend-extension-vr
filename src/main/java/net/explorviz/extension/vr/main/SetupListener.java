@@ -1,4 +1,4 @@
-package net.explorviz.extension.dummy.main;
+package net.explorviz.extension.vr.main;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;

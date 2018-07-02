@@ -1,4 +1,4 @@
-package net.explorviz.extension.dummy.model;
+package net.explorviz.extension.vr.model;
 
 import com.github.jasminb.jsonapi.annotations.Type;
 

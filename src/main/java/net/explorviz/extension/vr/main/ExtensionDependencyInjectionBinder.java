@@ -1,4 +1,4 @@
-package net.explorviz.extension.dummy.main;
+package net.explorviz.extension.vr.main;
 
 public class ExtensionDependencyInjectionBinder extends net.explorviz.server.main.DependencyInjectionBinder {
 

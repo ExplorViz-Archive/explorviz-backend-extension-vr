@@ -1,13 +1,13 @@
-package net.explorviz.extension.dummy.main;
+package net.explorviz.extension.vr.main;
 
 import javax.ws.rs.ApplicationPath;
 
 import org.glassfish.jersey.server.ResourceConfig;
 
 import net.explorviz.api.ExtensionAPIImpl;
-import net.explorviz.extension.dummy.model.DummyModel;
-import net.explorviz.extension.dummy.model.SubDummyModel;
-import net.explorviz.extension.dummy.providers.DummyModelProvider;
+import net.explorviz.extension.vr.model.DummyModel;
+import net.explorviz.extension.vr.model.SubDummyModel;
+import net.explorviz.extension.vr.providers.DummyModelProvider;
 
 @ApplicationPath("/extension/dummy")
 public class Application extends ResourceConfig {
@@ -31,6 +31,6 @@ public class Application extends ResourceConfig {
 		register(DummyModelProvider.class);
 
 		// register all resources in the given package
-		packages("net.explorviz.extension.dummy.resources");
+		packages("net.explorviz.extension.vr.resources");
 	}
 }
