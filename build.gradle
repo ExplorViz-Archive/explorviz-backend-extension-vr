@@ -22,6 +22,7 @@ repositories {
   
   // used for kieker and teetime snapshots
   maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+  mavenCentral()
 }
 
 
@@ -40,6 +41,9 @@ configurations {
 dependencies {
   	// Core logic
   	compile 'com.github.ExplorViz:explorviz-backend:master-SNAPSHOT'
+  	
+  	//Java Websocket
+  	compile 'org.java-websocket:Java-WebSocket:1.3.8'
 	
 	// local linking (explorviz backend project)
 	//compile project(':explorviz-backend')
