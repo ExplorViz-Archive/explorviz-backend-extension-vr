@@ -6,7 +6,7 @@ The related frontend extension is [explorviz-frontend-extension-vr](https://gith
 
 ## Requirements
 - [HTC Vive](https://www.vive.com) or [Oculus Rift CV1](https://www.oculus.com/rift/) with controllers and their respective firmware
-- [Steam] (https://store.steampowered.com/) for [SteamVR] (steamvr.com) which enables VR-functionalities
+- [Steam](https://store.steampowered.com/) for [SteamVR](https://store.steampowered.com/steamvr) which enables VR-functionalities
 - A powerful computer that can handle VR
 - Latest version of [Mozilla Firefox](https://www.mozilla.org/)
 - [ExplorViz Backend](https://github.com/ExplorViz/explorviz-backend)
