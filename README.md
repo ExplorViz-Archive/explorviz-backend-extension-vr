@@ -1,16 +1,21 @@
-# ExplorViz Backend Dummy Extension
+[//]: # (This readme is partly copied from other extension readmes to ensure consistency in the ExplorViz project)
+# ExplorViz-Backend-Extension-VR
 
-This repository holds a dummy extension for [ExplorViz Backend](https://github.com/ExplorViz/explorviz-backend). Use it as a starting point for your future extension.
+This extension adds features to the backend of ExplorViz to enable a multi-user VR-experience. 
+The related frontend extension is [explorviz-frontend-extension-vr](https://github.com/ExplorViz/explorviz-frontend-extension-vr).
 
-## Setup Development / Usage
-1. Clone this repository (e.g. for SSH `git clone git@github.com:ExplorViz/explorviz-backend-extension-dummy.git`)
-2. Set remote URL to the URL of your assigned repository (e.g. for SSH `git remote set-url origin git@github.com:ExplorViz/explorviz-backend-extension-X.git`)
-3. Rename the root folder *explorviz-backend-extension-dummy* to *explorviz-backend-extension-X*, where X is the name of your extension
-4. Run `./gradlew renameProject -PextensionName="X"`, where X is the name of your extension
-4. Adjust the README.md (e.g. remove Setup sections)
-5. Stage and commit changes with `git add -A && git commit -am "renaming dummy"`
-6. Push to remote origin and set upstream with `git push -u origin master`
-7. Follow the [Backend Setup](https://github.com/ExplorViz/explorviz-backend#explorviz-backend)
-8. In Eclipse: `Import -> Gradle -> Existing Gradle Project`
-9. Start your development
-10. Start the embedded web server with Gradle task `gretty -> appStart`
+## Requirements
+- [HTC Vive](https://www.vive.com) or [Oculus Rift CV1](https://www.oculus.com/rift/) with controllers and their respective firmware
+- [Steam](https://store.steampowered.com/) for [SteamVR](https://store.steampowered.com/steamvr) which enables VR-functionalities
+- A powerful computer that can handle VR
+- Latest version of [Mozilla Firefox](https://www.mozilla.org/)
+- [ExplorViz Backend](https://github.com/ExplorViz/explorviz-backend)
+- [ExplorViz Frontend](https://github.com/ExplorViz/explorviz-frontend)
+- [ExplorViz Frontend-VR-extension](https://github.com/ExplorViz/explorviz-frontend-extension-vr)
+
+## Installation
+1. Follow the [Eclipse Setup](https://github.com/ExplorViz/explorviz-backend#eclipse-setup) of the [ExplorViz Backend](https://github.com/ExplorViz/explorviz-backend)
+2. Clone this repository
+3. Import project into eclipse: via `Import -> Gradle -> Existing Gradle project -> path/to/explorviz-backend-extension-vr`
+4. Start **explorviz-backend-extension-vr** via Eclipse Tab: `Gradle Tasks -> explorviz-backend-extension-vr -> gretty -> appStart`
+5. Setup and start [explorviz-frontend](https://github.com/ExplorViz/explorviz-frontend) with the installed [explorviz-frontend-extension-vr](https://github.com/ExplorViz/explorviz-frontend-extension-vr)
