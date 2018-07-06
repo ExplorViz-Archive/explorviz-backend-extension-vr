@@ -1,43 +1,60 @@
 package net.explorviz.extension.vr.main;
 
 import java.net.InetSocketAddress;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
 
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
+import org.json.JSONObject;
 
 public class WebsocketServer extends WebSocketServer {
 
 	private static final int TCP_PORT = 4444;
 
-	private final Set<WebSocket> conns;
+	private final HashMap<Long, WebSocket> conns;
+
+	private static long idCounter = 0;
 
 	public WebsocketServer() {
 		super(new InetSocketAddress(TCP_PORT));
-		conns = new HashSet<>();
+		conns = new HashMap<>();
 		System.out.println("Websocket constructed");
 	}
 
 	@Override
 	public void onOpen(final WebSocket conn, final ClientHandshake handshake) {
-		conns.add(conn);
+		final long clientID = createID();
+		conns.put(clientID, conn);
 		System.out.println("New connection from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
+		final JSONObject messageID = new JSONObject();
+		messageID.put("id", clientID);
+		conn.send(messageID.toString());
 	}
 
 	@Override
 	public void onClose(final WebSocket conn, final int code, final String reason, final boolean remote) {
-		conns.remove(conn);
+		final long id = getWebSocketByID(conn);
+		if (id != -1)
+			conns.remove(id);
 		System.out.println("Closed connection to " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
 	}
 
 	@Override
 	public void onMessage(final WebSocket conn, final String message) {
 		System.out.println("Message from client: " + message);
-		for (final WebSocket sock : conns) {
-			sock.send(message);
+	}
+
+	private static synchronized long createID() {
+		return idCounter++;
+	}
+
+	private long getWebSocketByID(final WebSocket conn) {
+		for (final long id : conns.keySet()) {
+			if (conns.get(id) == conn)
+				return id;
 		}
+		return -1;
 	}
 
 	@Override

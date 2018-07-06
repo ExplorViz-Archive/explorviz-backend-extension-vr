@@ -44,6 +44,9 @@ dependencies {
   	
   	//Java Websocket
   	compile 'org.java-websocket:Java-WebSocket:1.3.8'
+  	
+  	//JSON
+  	compile 'org.json:json:20180130'
 	
 	// local linking (explorviz backend project)
 	//compile project(':explorviz-backend')
