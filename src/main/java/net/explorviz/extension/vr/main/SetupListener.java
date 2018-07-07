@@ -16,13 +16,14 @@ public class SetupListener implements ServletContextListener {
 	public void contextInitialized(final ServletContextEvent servletContextEvent) {
 
 		LOGGER.info("* * * * * * * * * * * * * * * * * * *\n");
-		LOGGER.info("Dummy Extension Servlet initialized.\n");
+		LOGGER.info("VR Extension Servlet initialized.\n");
 		LOGGER.info("* * * * * * * * * * * * * * * * * * *");
 
 		// Comment out or remove line to use live monitoring data
 		// Configuration.dummyMode = true;
 
-		new WebsocketServer().start();
+		final MultiUserMode multiUserMode = new MultiUserMode();
+		multiUserMode.start();
 
 	}
 

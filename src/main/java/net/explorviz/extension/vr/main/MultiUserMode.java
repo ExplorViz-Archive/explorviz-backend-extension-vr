@@ -8,18 +8,33 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 import org.json.JSONObject;
 
-public class WebsocketServer extends WebSocketServer {
+public class MultiUserMode extends WebSocketServer implements Runnable {
 
+	private Thread multiUserThread;
 	private static final int TCP_PORT = 4444;
-
 	private final HashMap<Long, WebSocket> conns;
-
 	private static long idCounter = 0;
 
-	public WebsocketServer() {
+	public void run2() {
+		System.out.println("MultiUserMode: Main loop entered");
+	}
+
+	@Override
+	public void start() {
+		super.start();
+		System.out.println("MultiUserMode: starting");
+
+		if (multiUserThread == null) {
+			multiUserThread = new Thread(this::run2);
+			multiUserThread.start();
+		}
+
+	}
+
+	MultiUserMode() {
 		super(new InetSocketAddress(TCP_PORT));
 		conns = new HashMap<>();
-		System.out.println("Websocket constructed");
+		System.out.println("Websocket: constructed");
 	}
 
 	@Override
@@ -34,7 +49,7 @@ public class WebsocketServer extends WebSocketServer {
 
 	@Override
 	public void onClose(final WebSocket conn, final int code, final String reason, final boolean remote) {
-		final long id = getWebSocketByID(conn);
+		final long id = getIDByWebSocket(conn);
 		if (id != -1)
 			conns.remove(id);
 		System.out.println("Closed connection to " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
@@ -49,7 +64,7 @@ public class WebsocketServer extends WebSocketServer {
 		return idCounter++;
 	}
 
-	private long getWebSocketByID(final WebSocket conn) {
+	private long getIDByWebSocket(final WebSocket conn) {
 		for (final long id : conns.keySet()) {
 			if (conns.get(id) == conn)
 				return id;
@@ -61,8 +76,8 @@ public class WebsocketServer extends WebSocketServer {
 	public void onError(final WebSocket conn, final Exception ex) {
 		// ex.printStackTrace();
 		if (conn != null) {
-			conns.remove(conn);
-			// do some thing if required
+			final long clientID = getIDByWebSocket(conn);
+			conns.remove(clientID);
 		}
 		System.out.println("ERROR from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
 	}
