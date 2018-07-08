@@ -16,7 +16,6 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	private static final int TCP_PORT = 4444;
 	private final HashMap<Long, WebSocket> conns;
 	private final HashMap<Long, UserModel> users;
-	private static long idCounter = 0;
 
 	public void run2() {
 		System.out.println("MultiUserMode: Main loop entered");
@@ -54,10 +53,28 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 		System.out.println("New connection from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
 
-		// inform user about his id
+		// inform users about new user with ID
+		userConnected(clientID);
+	}
+
+	private void userConnected(final long userID) {
 		final JSONObject messageID = new JSONObject();
-		messageID.put("id", clientID);
-		conn.send(messageID.toString());
+		messageID.put("id", userID);
+
+		broadcastMessage(messageID.toString());
+
+	}
+
+	/**
+	 * Sends a message (usually JSON as a string) to all connected users
+	 * 
+	 * @param msg
+	 *            The message which all users should receive
+	 */
+	public void broadcastMessage(final String msg) {
+		for (final WebSocket conn : conns.values()) {
+			conn.send(msg);
+		}
 	}
 
 	@Override
@@ -71,10 +88,6 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	@Override
 	public void onMessage(final WebSocket conn, final String message) {
 		System.out.println("Message from client: " + message);
-	}
-
-	private static synchronized long createID() {
-		return idCounter++;
 	}
 
 	private long getIDByWebSocket(final WebSocket conn) {
