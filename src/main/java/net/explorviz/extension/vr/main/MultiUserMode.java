@@ -8,11 +8,14 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 import org.json.JSONObject;
 
+import net.explorviz.extension.vr.model.UserModel;
+
 public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	private Thread multiUserThread;
 	private static final int TCP_PORT = 4444;
 	private final HashMap<Long, WebSocket> conns;
+	private final HashMap<Long, UserModel> users;
 	private static long idCounter = 0;
 
 	public void run2() {
@@ -34,14 +37,24 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	MultiUserMode() {
 		super(new InetSocketAddress(TCP_PORT));
 		conns = new HashMap<>();
+		users = new HashMap<>();
 		System.out.println("Websocket: constructed");
 	}
 
 	@Override
 	public void onOpen(final WebSocket conn, final ClientHandshake handshake) {
-		final long clientID = createID();
+		final UserModel user = new UserModel();
+		final long clientID = user.getId();
+
+		// use id as initial username
+		user.setUserName(String.valueOf(user.getId()));
+
 		conns.put(clientID, conn);
+		users.put(clientID, user);
+
 		System.out.println("New connection from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
+
+		// inform user about his id
 		final JSONObject messageID = new JSONObject();
 		messageID.put("id", clientID);
 		conn.send(messageID.toString());
@@ -84,8 +97,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	@Override
 	public void onStart() {
-		// TODO Auto-generated method stub
-
+		System.out.println("Server has started");
 	}
 
 }
