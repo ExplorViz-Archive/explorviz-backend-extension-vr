@@ -65,10 +65,20 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	}
 
 	private void userConnected(final long userID) {
-		final JSONObject messageID = new JSONObject();
-		messageID.put("id", userID);
+		final JSONObject connectMessage = new JSONObject();
+		final JSONObject user = new JSONObject();
+		connectMessage.put("event", "user_connect");
+		user.put("name", "user" + userID); // TODO
+		user.put("id", userID);
+		connectMessage.put("user", user);
 
-		broadcastMessage(messageID.toString());
+		broadcastAllBut(connectMessage.toString(), userID);
+
+		final JSONObject initMessage = new JSONObject();
+		initMessage.put("event", "init");
+		initMessage.put("id", userID);
+		final WebSocket conn = conns.get(userID);
+		conn.send(initMessage.toString());
 
 	}
 
@@ -78,9 +88,24 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	 * @param msg
 	 *            The message which all users should receive
 	 */
-	public void broadcastMessage(final String msg) {
+	public void broadcastAll(final String msg) {
 		for (final WebSocket conn : conns.values()) {
 			conn.send(msg);
+		}
+	}
+
+	/**
+	 * Sends a message (usually JSON as a string) to all but one connected users
+	 *
+	 * @param msg
+	 *            The message which all users should receive
+	 * @param userID
+	 *            The user that should be excluded from the message
+	 */
+	public void broadcastAllBut(final String msg, final long userID) {
+		for (final WebSocket conn : conns.values()) {
+			if (conns.get(userID) != conn)
+				conn.send(msg);
 		}
 	}
 
