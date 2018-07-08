@@ -10,6 +10,13 @@ import org.json.JSONObject;
 
 import net.explorviz.extension.vr.model.UserModel;
 
+/**
+ * Main class for multi user experience. Contains a WebSocket for communication
+ * with clients.
+ *
+ * @author Daniel König & Malte Hansen
+ *
+ */
 public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	private Thread multiUserThread;
@@ -67,7 +74,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	/**
 	 * Sends a message (usually JSON as a string) to all connected users
-	 * 
+	 *
 	 * @param msg
 	 *            The message which all users should receive
 	 */
