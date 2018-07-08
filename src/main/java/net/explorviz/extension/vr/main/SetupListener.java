@@ -1,11 +1,15 @@
 package net.explorviz.extension.vr.main;
 
+import java.io.IOException;
+
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import net.explorviz.server.helper.PropertyService;
 
 @WebListener
 public class SetupListener implements ServletContextListener {
@@ -19,8 +23,12 @@ public class SetupListener implements ServletContextListener {
 		LOGGER.info("VR Extension Servlet initialized.\n");
 		LOGGER.info("* * * * * * * * * * * * * * * * * * *");
 
-		// Comment out or remove line to use live monitoring data
-		// Configuration.dummyMode = true;
+		// Comment out or remove the following lines to use live monitoring data
+		try {
+			PropertyService.setBooleanProperty("useDummyMode", true);
+		} catch (final IOException e) {
+			LOGGER.error("Could not set dummy mode to true", e);
+		}
 
 		final MultiUserMode multiUserMode = new MultiUserMode();
 		multiUserMode.start();
