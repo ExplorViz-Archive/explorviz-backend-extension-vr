@@ -6,6 +6,7 @@ import java.util.HashMap;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import net.explorviz.extension.vr.model.UserModel;
@@ -44,7 +45,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		super(new InetSocketAddress(TCP_PORT));
 		conns = new HashMap<>();
 		users = new HashMap<>();
-		System.out.println("Websocket: constructed");
+		System.out.println("MultiUserMode: Websocket constructed");
 	}
 
 	@Override
@@ -65,18 +66,27 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	}
 
 	private void userConnected(final long userID) {
+		// message other user about the new user
 		final JSONObject connectMessage = new JSONObject();
 		final JSONObject user = new JSONObject();
 		connectMessage.put("event", "user_connect");
-		user.put("name", "user" + userID); // TODO
+		user.put("name", users.get(userID).getUserName());
 		user.put("id", userID);
 		connectMessage.put("user", user);
-
 		broadcastAllBut(connectMessage.toString(), userID);
 
+		// send user their id and all other users' id and name
 		final JSONObject initMessage = new JSONObject();
+		final JSONArray usersArray = new JSONArray();
 		initMessage.put("event", "init");
 		initMessage.put("id", userID);
+		for (final UserModel userData : users.values()) {
+			final JSONObject userObject = new JSONObject();
+			userObject.put("id", userData.getId());
+			userObject.put("name", userData.getUserName());
+			usersArray.put(userObject);
+		}
+		initMessage.put("users", usersArray);
 		final WebSocket conn = conns.get(userID);
 		conn.send(initMessage.toString());
 
@@ -112,8 +122,10 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	@Override
 	public void onClose(final WebSocket conn, final int code, final String reason, final boolean remote) {
 		final long id = getIDByWebSocket(conn);
-		if (id != -1)
+		if (id != -1) {
 			conns.remove(id);
+			users.remove(id);
+		}
 		System.out.println("Closed connection to " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
 	}
 
