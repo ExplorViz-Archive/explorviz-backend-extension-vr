@@ -52,9 +52,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	public void onOpen(final WebSocket conn, final ClientHandshake handshake) {
 		final UserModel user = new UserModel();
 		final long clientID = user.getId();
-
-		// use id as initial username
-		user.setUserName(String.valueOf(user.getId()));
+		user.setState("connecting");
 
 		conns.put(clientID, conn);
 		users.put(clientID, user);
@@ -62,29 +60,48 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		System.out.println("New connection from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
 
 		// inform users about new user with ID
-		userConnected(clientID);
+		userConnecting(clientID);
 	}
 
-	private void userConnected(final long userID) {
+	private void userConnecting(final long userID) {
 		// message other user about the new user
-		final JSONObject connectMessage = new JSONObject();
+		final JSONObject connectingMessage = new JSONObject();
+		connectingMessage.put("event", "user_connecting");
+		connectingMessage.put("id", userID);
+		broadcastAllBut(connectingMessage.toString(), userID);
+
+		connectingMessage.remove("event");
+		connectingMessage.put("event", "connecting");
+		final WebSocket conn = conns.get(userID);
+		conn.send(connectingMessage.toString());
+
+	}
+
+	private void userConnected(final long userID, final String name, final String device) {
+		users.get(userID).setState("connected");
+		// message other user about the new user
+		final JSONObject connectedMessage = new JSONObject();
 		final JSONObject user = new JSONObject();
-		connectMessage.put("event", "user_connect");
+		connectedMessage.put("event", "user_connected");
 		user.put("name", users.get(userID).getUserName());
 		user.put("id", userID);
-		connectMessage.put("user", user);
-		broadcastAllBut(connectMessage.toString(), userID);
+		user.put("device", device);
+		connectedMessage.put("user", user);
+		broadcastAllBut(connectedMessage.toString(), userID);
 
 		// send user their id and all other users' id and name
 		final JSONObject initMessage = new JSONObject();
 		final JSONArray usersArray = new JSONArray();
-		initMessage.put("event", "init");
+		initMessage.put("event", "connected");
 		initMessage.put("id", userID);
 		for (final UserModel userData : users.values()) {
-			final JSONObject userObject = new JSONObject();
-			userObject.put("id", userData.getId());
-			userObject.put("name", userData.getUserName());
-			usersArray.put(userObject);
+			if (userData.getState().equals("connected")) {
+				final JSONObject userObject = new JSONObject();
+				userObject.put("id", userData.getId());
+				userObject.put("name", userData.getUserName());
+				userObject.put("device", userData.getDevice());
+				usersArray.put(userObject);
+			}
 		}
 		initMessage.put("users", usersArray);
 		final WebSocket conn = conns.get(userID);
@@ -131,7 +148,26 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	@Override
 	public void onMessage(final WebSocket conn, final String message) {
-		System.out.println("Message from client: " + message);
+		// System.out.println("Message from client: " + message);
+		new Thread(() -> {
+			JSONObject JSONmessage = new JSONObject(message);
+			final String event = JSONmessage.getString("event");
+			final long id = getIDByWebSocket(conn);
+
+			if (event.equals("position")) {
+				JSONmessage.put("id", id);
+				broadcastAllBut(JSONmessage.toString(), id);
+				JSONmessage = null;
+			} else if (event.equals("request_connect")) {
+				final String name = JSONmessage.getString("name");
+				final String device = JSONmessage.getString("device");
+				final UserModel user = users.get(id);
+				user.setUserName(name);
+				user.setDevice(device);
+				userConnected(id, name, device);
+			}
+		}).start();
+
 	}
 
 	private long getIDByWebSocket(final WebSocket conn) {

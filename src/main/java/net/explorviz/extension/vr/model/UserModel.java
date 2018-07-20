@@ -3,12 +3,30 @@ package net.explorviz.extension.vr.model;
 public class UserModel extends BaseModel {
 
 	private String userName;
-	private ControllerModel leftController;
-	private ControllerModel rightController;
+	private ControllerModel controller1;
+	private ControllerModel controller2;
+	private String device;
+	private String state;
+
+	public String getState() {
+		return state;
+	}
+
+	public void setState(final String state) {
+		this.state = state;
+	}
+
+	public String getDevice() {
+		return device;
+	}
+
+	public void setDevice(final String device) {
+		this.device = device;
+	}
 
 	public UserModel() {
-		leftController = new ControllerModel();
-		rightController = new ControllerModel();
+		controller1 = new ControllerModel();
+		controller2 = new ControllerModel();
 	}
 
 	public UserModel(final String userName) {
@@ -23,12 +41,12 @@ public class UserModel extends BaseModel {
 		this.userName = userName;
 	}
 
-	public ControllerModel getLeftController() {
-		return this.leftController;
+	public ControllerModel getController1() {
+		return this.controller1;
 	}
 
-	public ControllerModel getRightController() {
-		return this.rightController;
+	public ControllerModel getController2() {
+		return this.controller2;
 	}
 
 }
