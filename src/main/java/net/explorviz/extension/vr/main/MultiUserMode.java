@@ -1,15 +1,26 @@
 package net.explorviz.extension.vr.main;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
 
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import net.explorviz.api.ExtensionAPIImpl;
+import net.explorviz.extension.vr.model.NodeGroupModel;
+import net.explorviz.extension.vr.model.SystemModel;
 import net.explorviz.extension.vr.model.UserModel;
+import net.explorviz.model.landscape.Landscape;
+import net.explorviz.model.landscape.NodeGroup;
+import net.explorviz.model.landscape.System;
 
 /**
  * Main class for multi user experience. Contains a WebSocket for communication
@@ -21,18 +32,22 @@ import net.explorviz.extension.vr.model.UserModel;
 public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	private Thread multiUserThread;
+	private final ArrayList<SystemModel> systems = new ArrayList<>();
 	private static final int TCP_PORT = 4444;
 	private final HashMap<Long, WebSocket> conns;
 	private final HashMap<Long, UserModel> users;
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(MultiUserMode.class);
+
 	public void run2() {
-		System.out.println("MultiUserMode: Main loop entered");
+		LOGGER.info("MultiUserMode: Main loop entered");
 	}
 
 	@Override
 	public void start() {
+		initializeLandscapeModel();
 		super.start();
-		System.out.println("MultiUserMode: starting");
+		LOGGER.info("MultiUserMode: starting");
 
 		if (multiUserThread == null) {
 			multiUserThread = new Thread(this::run2);
@@ -45,7 +60,29 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		super(new InetSocketAddress(TCP_PORT));
 		conns = new HashMap<>();
 		users = new HashMap<>();
-		System.out.println("MultiUserMode: Websocket constructed");
+		LOGGER.info("MultiUserMode: Websocket constructed");
+	}
+
+	private void initializeLandscapeModel() {
+		final ExtensionAPIImpl coreAPI = ExtensionAPIImpl.getInstance();
+		final Landscape landscape = coreAPI.getLatestLandscape();
+
+		final List<System> landscapeSystems = landscape.getSystems();
+
+		// copy ids of systems and nodegroups to own model in order to keep track of
+		// their visual state in the frontend
+		for (final ListIterator<System> it = landscapeSystems.listIterator(landscapeSystems.size()); it.hasNext();) {
+			final List<NodeGroup> nodeGroups = it.next().getNodeGroups();
+			final ArrayList<NodeGroupModel> nodeModels = new ArrayList<NodeGroupModel>();
+			for (final ListIterator<NodeGroup> itNG = nodeGroups.listIterator(nodeGroups.size()); itNG.hasNext();) {
+				final NodeGroupModel nodeGroup = new NodeGroupModel();
+				nodeGroup.setId(itNG.next().getId());
+				nodeModels.add(nodeGroup);
+			}
+			final SystemModel system = new SystemModel(nodeModels);
+			system.setId(it.next().getId());
+			systems.add(system);
+		}
 	}
 
 	@Override
@@ -57,7 +94,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		conns.put(clientID, conn);
 		users.put(clientID, user);
 
-		System.out.println("New connection from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
+		LOGGER.info("New connection from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
 
 		// inform users about new user with ID
 		userConnecting(clientID);
@@ -143,12 +180,12 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 			conns.remove(id);
 			users.remove(id);
 		}
-		System.out.println("Closed connection to " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
+		LOGGER.info("Closed connection to " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
 	}
 
 	@Override
 	public void onMessage(final WebSocket conn, final String message) {
-		// System.out.println("Message from client: " + message);
+		LOGGER.info("Message from client: " + message);
 		new Thread(() -> {
 			JSONObject JSONmessage = new JSONObject(message);
 			final String event = JSONmessage.getString("event");
@@ -185,12 +222,12 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 			final long clientID = getIDByWebSocket(conn);
 			conns.remove(clientID);
 		}
-		System.out.println("ERROR from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
+		LOGGER.info("ERROR from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
 	}
 
 	@Override
 	public void onStart() {
-		System.out.println("Server has started");
+		LOGGER.info("Server has started");
 	}
 
 }

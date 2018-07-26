@@ -1,10 +1,10 @@
 package net.explorviz.extension.vr.model;
 
-public class NodeGroupModel {
+public class NodeGroupModel extends BaseModel {
 
 	private boolean opened;
 
-	NodeGroupModel() {
+	public NodeGroupModel() {
 	}
 
 	boolean isOpened() {

@@ -1,12 +1,14 @@
 package net.explorviz.extension.vr.model;
 
-public class SystemModel {
+import java.util.List;
 
-	private final NodeGroupModel[] nodeGroups;
+public class SystemModel extends BaseModel {
 
-	private boolean opened;
+	private final List<NodeGroupModel> nodeGroups;
 
-	SystemModel(final NodeGroupModel[] nodeGroups) {
+	private boolean opened = true;
+
+	public SystemModel(final List<NodeGroupModel> nodeGroups) {
 		this.nodeGroups = nodeGroups;
 	}
 
@@ -18,7 +20,7 @@ public class SystemModel {
 		this.opened = opened;
 	}
 
-	NodeGroupModel[] getNodeGroups() {
+	List<NodeGroupModel> getNodeGroups() {
 		return nodeGroups;
 	}
 
