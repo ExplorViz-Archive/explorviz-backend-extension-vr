@@ -12,15 +12,15 @@ public class SystemModel extends BaseModel {
 		this.nodeGroups = nodeGroups;
 	}
 
-	boolean isOpened() {
+	public boolean isOpened() {
 		return opened;
 	}
 
-	void setOpened(final boolean opened) {
+	public void setOpened(final boolean opened) {
 		this.opened = opened;
 	}
 
-	List<NodeGroupModel> getNodeGroups() {
+	public List<NodeGroupModel> getNodeGroups() {
 		return nodeGroups;
 	}
 

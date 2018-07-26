@@ -7,11 +7,11 @@ public class NodeGroupModel extends BaseModel {
 	public NodeGroupModel() {
 	}
 
-	boolean isOpened() {
+	public boolean isOpened() {
 		return opened;
 	}
 
-	void setOpened(final boolean opened) {
+	public void setOpened(final boolean opened) {
 		this.opened = opened;
 	}
 
