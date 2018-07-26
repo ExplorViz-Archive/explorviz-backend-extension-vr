@@ -5,7 +5,6 @@ public class UserModel extends BaseModel {
 	private String userName;
 	private ControllerModel controller1;
 	private ControllerModel controller2;
-	private String device;
 	private String state;
 
 	public String getState() {
@@ -14,14 +13,6 @@ public class UserModel extends BaseModel {
 
 	public void setState(final String state) {
 		this.state = state;
-	}
-
-	public String getDevice() {
-		return device;
-	}
-
-	public void setDevice(final String device) {
-		this.device = device;
 	}
 
 	public UserModel() {

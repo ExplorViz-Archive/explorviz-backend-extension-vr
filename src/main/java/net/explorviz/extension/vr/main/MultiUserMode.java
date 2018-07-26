@@ -45,7 +45,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	@Override
 	public void start() {
-		initializeLandscapeModel();
+		// initializeLandscapeModel();
 		super.start();
 		LOGGER.info("MultiUserMode: starting");
 
@@ -103,40 +103,43 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	private void userConnecting(final long userID) {
 		// message other user about the new user
 		final JSONObject connectingMessage = new JSONObject();
-		connectingMessage.put("event", "user_connecting");
+		connectingMessage.put("event", "receive_user_connecting");
 		connectingMessage.put("id", userID);
 		broadcastAllBut(connectingMessage.toString(), userID);
 
 		connectingMessage.remove("event");
-		connectingMessage.put("event", "connecting");
+		connectingMessage.put("event", "receive_self_connecting");
 		final WebSocket conn = conns.get(userID);
 		conn.send(connectingMessage.toString());
 
 	}
 
-	private void userConnected(final long userID, final String name, final String device) {
-		users.get(userID).setState("connected");
+	private void userConnected(final long userID, final String name) {
+		final UserModel user = users.get(userID);
+		user.setState("connected");
 		// message other user about the new user
 		final JSONObject connectedMessage = new JSONObject();
-		final JSONObject user = new JSONObject();
-		connectedMessage.put("event", "user_connected");
-		user.put("name", users.get(userID).getUserName());
-		user.put("id", userID);
-		user.put("device", device);
-		connectedMessage.put("user", user);
+		final JSONObject userObj = new JSONObject();
+		connectedMessage.put("event", "receive_user_connected");
+		userObj.put("name", user.getUserName());
+		userObj.put("id", userID);
+		connectedMessage.put("user", userObj);
 		broadcastAllBut(connectedMessage.toString(), userID);
 
 		// send user their id and all other users' id and name
 		final JSONObject initMessage = new JSONObject();
 		final JSONArray usersArray = new JSONArray();
-		initMessage.put("event", "connected");
+		initMessage.put("event", "receive_self_connected");
 		initMessage.put("id", userID);
 		for (final UserModel userData : users.values()) {
 			if (userData.getState().equals("connected")) {
 				final JSONObject userObject = new JSONObject();
 				userObject.put("id", userData.getId());
 				userObject.put("name", userData.getUserName());
-				userObject.put("device", userData.getDevice());
+				final JSONObject controllers = new JSONObject();
+				controllers.put("controller1", userData.getController1().getName());
+				controllers.put("controller2", userData.getController2().getName());
+				userObject.put("controllers", controllers);
 				usersArray.put(userObject);
 			}
 		}
@@ -187,21 +190,42 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	public void onMessage(final WebSocket conn, final String message) {
 		LOGGER.info("Message from client: " + message);
 		new Thread(() -> {
-			JSONObject JSONmessage = new JSONObject(message);
+			final JSONObject JSONmessage = new JSONObject(message);
 			final String event = JSONmessage.getString("event");
 			final long id = getIDByWebSocket(conn);
 
-			if (event.equals("position")) {
+			if (event.equals("receive_user_positions")) {
 				JSONmessage.put("id", id);
 				broadcastAllBut(JSONmessage.toString(), id);
-				JSONmessage = null;
-			} else if (event.equals("request_connect")) {
+			} else if (event.equals("receive_connect_request")) {
 				final String name = JSONmessage.getString("name");
-				final String device = JSONmessage.getString("device");
 				final UserModel user = users.get(id);
 				user.setUserName(name);
-				user.setDevice(device);
-				userConnected(id, name, device);
+				userConnected(id, name);
+			} else if (event.equals("receive_user_controllers")) {
+				final UserModel user = users.get(id);
+				if (JSONmessage.has("connect")) {
+					final JSONObject controllers = JSONmessage.getJSONObject("connect");
+					if (controllers.has("controller1")) {
+						user.getController1().setName(controllers.getString("controller1"));
+					}
+					if (controllers.has("controller2")) {
+						user.getController2().setName(controllers.getString("controller2"));
+					}
+				}
+				if (JSONmessage.has("disconnect")) {
+					final JSONArray controllers = JSONmessage.getJSONArray("disconnect");
+					for (int i = 0; i < controllers.length(); i++) {
+						if (controllers.get(i) == "controller1") {
+							user.getController1().setName(null);
+						}
+						if (controllers.get(i) == "controller2") {
+							user.getController2().setName(null);
+						}
+					}
+				}
+				JSONmessage.put("id", id);
+				broadcastAllBut(JSONmessage.toString(), id);
 			}
 		}).start();
 
