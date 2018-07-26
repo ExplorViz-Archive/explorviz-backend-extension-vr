@@ -4,7 +4,6 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
@@ -64,29 +63,65 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	}
 
 	private void initializeLandscapeModel() {
+		LOGGER.info("Initialize landscape");
+		systems.clear();
 		final ExtensionAPIImpl coreAPI = ExtensionAPIImpl.getInstance();
 		final Landscape landscape = coreAPI.getLatestLandscape();
 
 		final List<System> landscapeSystems = landscape.getSystems();
 
+		LOGGER.info("landscapeSystems length: " + landscapeSystems.size());
+
 		// copy ids of systems and nodegroups to own model in order to keep track of
 		// their visual state in the frontend
-		for (final ListIterator<System> it = landscapeSystems.listIterator(landscapeSystems.size()); it.hasNext();) {
-			final List<NodeGroup> nodeGroups = it.next().getNodeGroups();
+		for (final System LandscapeSystem : landscapeSystems) {
+			final List<NodeGroup> nodeGroups = LandscapeSystem.getNodeGroups();
 			final ArrayList<NodeGroupModel> nodeModels = new ArrayList<NodeGroupModel>();
-			for (final ListIterator<NodeGroup> itNG = nodeGroups.listIterator(nodeGroups.size()); itNG.hasNext();) {
+			for (final NodeGroup nodeModel : nodeGroups) {
 				final NodeGroupModel nodeGroup = new NodeGroupModel();
-				nodeGroup.setId(itNG.next().getId());
+				nodeGroup.setId(nodeModel.getId());
 				nodeModels.add(nodeGroup);
 			}
 			final SystemModel system = new SystemModel(nodeModels);
-			system.setId(it.next().getId());
+			system.setId(LandscapeSystem.getId());
 			systems.add(system);
 		}
+		LOGGER.info("systems length: " + systems.size());
+
+	}
+
+	private void sendLandscape(final Long userID) {
+		final JSONArray systemArray = new JSONArray();
+		for (final SystemModel systemModel : systems) {
+			final JSONArray nodeGroupArray = new JSONArray();
+			for (final NodeGroupModel nodeGroupModel : systemModel.getNodeGroups()) {
+				final JSONObject nodeGroupObj = new JSONObject();
+				nodeGroupObj.put("id", nodeGroupModel.getId());
+				nodeGroupObj.put("opened", nodeGroupModel.isOpened());
+				nodeGroupArray.put(nodeGroupObj);
+			}
+			final JSONObject systemObj = new JSONObject();
+			systemObj.put("id", systemModel.getId());
+			systemObj.put("opened", systemModel.isOpened());
+			systemObj.put("nodeGroups", nodeGroupArray);
+			systemArray.put(systemObj);
+		}
+
+		final JSONObject landscapeObj = new JSONObject();
+		landscapeObj.put("event", "receive_landscape");
+		landscapeObj.put("systems", systemArray);
+
+		final WebSocket conn = conns.get(userID);
+		conn.send(landscapeObj.toString());
 	}
 
 	@Override
 	public void onOpen(final WebSocket conn, final ClientHandshake handshake) {
+		// initialize landscape before first user connects
+		if (users.keySet().isEmpty()) {
+			initializeLandscapeModel();
+		}
+
 		final UserModel user = new UserModel();
 		final long clientID = user.getId();
 		user.setState("connecting");
@@ -147,6 +182,8 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		final WebSocket conn = conns.get(userID);
 		conn.send(initMessage.toString());
 
+		// send current state of landscape to new user
+		sendLandscape(userID);
 	}
 
 	/**
