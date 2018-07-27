@@ -35,11 +35,43 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	private static final int TCP_PORT = 4444;
 	private final HashMap<Long, WebSocket> conns;
 	private final HashMap<Long, UserModel> users;
+	private final boolean running = true;
+	private final HashMap<Long, JSONArray> queues;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(MultiUserMode.class);
 
 	public void run2() {
-		LOGGER.info("MultiUserMode: Main loop entered");
+		init();
+
+		final int fps = 90; // number of update per second.
+		final double tickPerSecond = 1000000000 / fps;
+		double delta = 0;
+		long now;
+		long lastTime = java.lang.System.nanoTime();
+
+		while (running) {
+			now = java.lang.System.nanoTime();
+			delta += (now - lastTime) / tickPerSecond;
+			lastTime = now;
+
+			if (delta >= 1) {
+				tick();
+				delta--;
+			}
+		}
+	}
+
+	private void init() {
+		// initializeLandscapeModel();
+	}
+
+	private void tick() {
+		for (final long userID : queues.keySet()) {
+			final JSONArray queue = queues.get(userID);
+			final WebSocket conn = conns.get(userID);
+			conn.send(queue.toString());
+		}
+		queues.clear();
 	}
 
 	@Override
@@ -59,6 +91,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		super(new InetSocketAddress(TCP_PORT));
 		conns = new HashMap<>();
 		users = new HashMap<>();
+		queues = new HashMap<>();
 		LOGGER.info("MultiUserMode: Websocket constructed");
 	}
 
@@ -111,16 +144,19 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		landscapeObj.put("event", "receive_landscape");
 		landscapeObj.put("systems", systemArray);
 
-		final WebSocket conn = conns.get(userID);
-		conn.send(landscapeObj.toString());
+		enqueue(userID, landscapeObj);
+	}
+
+	private void enqueue(final long userID, final JSONObject message) {
+		if (!queues.containsKey(userID)) {
+			queues.put(userID, new JSONArray());
+		}
+		final JSONArray queue = queues.get(userID);
+		queue.put(message);
 	}
 
 	@Override
 	public void onOpen(final WebSocket conn, final ClientHandshake handshake) {
-		// initialize landscape before first user connects
-		if (users.keySet().isEmpty()) {
-			initializeLandscapeModel();
-		}
 
 		final UserModel user = new UserModel();
 		final long clientID = user.getId();
@@ -140,12 +176,12 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		final JSONObject connectingMessage = new JSONObject();
 		connectingMessage.put("event", "receive_user_connecting");
 		connectingMessage.put("id", userID);
-		broadcastAllBut(connectingMessage.toString(), userID);
+		broadcastAllBut(connectingMessage, userID);
 
 		connectingMessage.remove("event");
 		connectingMessage.put("event", "receive_self_connecting");
-		final WebSocket conn = conns.get(userID);
-		conn.send(connectingMessage.toString());
+
+		enqueue(userID, connectingMessage);
 
 	}
 
@@ -159,7 +195,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		userObj.put("name", user.getUserName());
 		userObj.put("id", userID);
 		connectedMessage.put("user", userObj);
-		broadcastAllBut(connectedMessage.toString(), userID);
+		broadcastAllBut(connectedMessage, userID);
 
 		// send user their id and all other users' id and name
 		final JSONObject initMessage = new JSONObject();
@@ -179,8 +215,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 			}
 		}
 		initMessage.put("users", usersArray);
-		final WebSocket conn = conns.get(userID);
-		conn.send(initMessage.toString());
+		enqueue(userID, initMessage);
 
 		// send current state of landscape to new user
 		sendLandscape(userID);
@@ -192,9 +227,9 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	 * @param msg
 	 *            The message which all users should receive
 	 */
-	public void broadcastAll(final String msg) {
-		for (final WebSocket conn : conns.values()) {
-			conn.send(msg);
+	public void broadcastAll(final JSONObject msg) {
+		for (final long userID : users.keySet()) {
+			enqueue(userID, msg);
 		}
 	}
 
@@ -206,10 +241,10 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	 * @param userID
 	 *            The user that should be excluded from the message
 	 */
-	public void broadcastAllBut(final String msg, final long userID) {
-		for (final WebSocket conn : conns.values()) {
-			if (conns.get(userID) != conn)
-				conn.send(msg);
+	public void broadcastAllBut(final JSONObject msg, final long userID) {
+		for (final long id : users.keySet()) {
+			if (userID != id)
+				enqueue(id, msg);
 		}
 	}
 
@@ -219,6 +254,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		if (id != -1) {
 			conns.remove(id);
 			users.remove(id);
+			queues.remove(id);
 		}
 		LOGGER.info("Closed connection to " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
 	}
@@ -226,14 +262,16 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	@Override
 	public void onMessage(final WebSocket conn, final String message) {
 		LOGGER.info("Message from client: " + message);
-		new Thread(() -> {
-			final JSONObject JSONmessage = new JSONObject(message);
+		// new Thread(() -> {
+		final JSONArray queue = new JSONArray(message);
+		for (int i = 0; i < queue.length(); i++) {
+			final JSONObject JSONmessage = queue.getJSONObject(i);
 			final String event = JSONmessage.getString("event");
 			final long id = getIDByWebSocket(conn);
 
 			if (event.equals("receive_user_positions")) {
 				JSONmessage.put("id", id);
-				broadcastAllBut(JSONmessage.toString(), id);
+				broadcastAllBut(JSONmessage, id);
 			} else if (event.equals("receive_connect_request")) {
 				final String name = JSONmessage.getString("name");
 				final UserModel user = users.get(id);
@@ -252,19 +290,20 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 				}
 				if (JSONmessage.has("disconnect")) {
 					final JSONArray controllers = JSONmessage.getJSONArray("disconnect");
-					for (int i = 0; i < controllers.length(); i++) {
-						if (controllers.get(i) == "controller1") {
+					for (int j = 0; j < controllers.length(); j++) {
+						if (controllers.get(j) == "controller1") {
 							user.getController1().setName(null);
 						}
-						if (controllers.get(i) == "controller2") {
+						if (controllers.get(j) == "controller2") {
 							user.getController2().setName(null);
 						}
 					}
 				}
 				JSONmessage.put("id", id);
-				broadcastAllBut(JSONmessage.toString(), id);
+				broadcastAllBut(JSONmessage, id);
 			}
-		}).start();
+		}
+		// }).start();
 
 	}
 
@@ -278,12 +317,14 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	@Override
 	public void onError(final WebSocket conn, final Exception ex) {
-		// ex.printStackTrace();
+		ex.printStackTrace();
 		if (conn != null) {
 			final long clientID = getIDByWebSocket(conn);
 			conns.remove(clientID);
+			users.remove(clientID);
+			queues.remove(clientID);
+			LOGGER.info("ERROR from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
 		}
-		LOGGER.info("ERROR from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
 	}
 
 	@Override
