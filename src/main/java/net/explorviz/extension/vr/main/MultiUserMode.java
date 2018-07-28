@@ -76,7 +76,6 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	@Override
 	public void start() {
-		// initializeLandscapeModel();
 		super.start();
 		LOGGER.info("MultiUserMode: starting");
 
@@ -157,6 +156,11 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	@Override
 	public void onOpen(final WebSocket conn, final ClientHandshake handshake) {
+
+		// initialize landscape when first user connects
+		if (users.keySet().isEmpty()) {
+			initializeLandscapeModel();
+		}
 
 		final UserModel user = new UserModel();
 		final long clientID = user.getId();
