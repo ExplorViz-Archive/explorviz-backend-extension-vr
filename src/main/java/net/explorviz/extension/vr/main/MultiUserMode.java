@@ -265,7 +265,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	@Override
 	public void onMessage(final WebSocket conn, final String message) {
-		LOGGER.info("Message from client: " + message);
+		// LOGGER.info("Message from client: " + message);
 		// new Thread(() -> {
 		final JSONArray queue = new JSONArray(message);
 		for (int i = 0; i < queue.length(); i++) {
@@ -325,7 +325,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 				systemState.put(systemID, systemOpened);
 
 				// forward update from user to all other users
-				broadcastAllBut(JSONmessage, id);
+				broadcastAll(JSONmessage);
 
 				break;
 			case "receive_nodeGroup_update":
