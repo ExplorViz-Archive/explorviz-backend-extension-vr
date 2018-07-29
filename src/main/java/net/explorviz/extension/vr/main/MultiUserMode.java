@@ -67,9 +67,11 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	private void tick() {
 		for (final long userID : queues.keySet()) {
-			final JSONArray queue = queues.get(userID);
-			final WebSocket conn = conns.get(userID);
-			conn.send(queue.toString());
+			if (conns.containsKey(userID)) {
+				final JSONArray queue = queues.get(userID);
+				final WebSocket conn = conns.get(userID);
+				conn.send(queue.toString());
+			}
 		}
 		queues.clear();
 	}
@@ -268,17 +270,19 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 			final JSONObject JSONmessage = queue.getJSONObject(i);
 			final String event = JSONmessage.getString("event");
 			final long id = getIDByWebSocket(conn);
+			final UserModel user = users.get(id);
 
-			if (event.equals("receive_user_positions")) {
+			switch (event) {
+			case "receive_user_positions":
 				JSONmessage.put("id", id);
 				broadcastAllBut(JSONmessage, id);
-			} else if (event.equals("receive_connect_request")) {
+				break;
+			case "receive_connect_request":
 				final String name = JSONmessage.getString("name");
-				final UserModel user = users.get(id);
 				user.setUserName(name);
 				userConnected(id, name);
-			} else if (event.equals("receive_user_controllers")) {
-				final UserModel user = users.get(id);
+				break;
+			case "receive_user_controllers":
 				if (JSONmessage.has("connect")) {
 					final JSONObject controllers = JSONmessage.getJSONObject("connect");
 					if (controllers.has("controller1")) {
@@ -301,6 +305,19 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 				}
 				JSONmessage.put("id", id);
 				broadcastAllBut(JSONmessage, id);
+				break;
+			case "receive_disconnect_request":
+				if (conn.isOpen())
+					conn.close();
+
+				conns.remove(id);
+				users.remove(id);
+				final JSONObject disconnectMessage = new JSONObject();
+				disconnectMessage.put("event", "receive_user_disconnect");
+				disconnectMessage.put("id", id);
+				broadcastAll(disconnectMessage);
+				break;
+
 			}
 		}
 		// }).start();
