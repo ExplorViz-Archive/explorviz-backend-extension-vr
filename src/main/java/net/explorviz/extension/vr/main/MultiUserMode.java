@@ -118,10 +118,10 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		// copy ids of systems and nodegroups to Hashmaps and initialize open state with
 		// true
 		for (final System LandscapeSystem : landscapeSystems) {
-			systemState.put(LandscapeSystem.getId(), true);
+			systemState.put(LandscapeSystem.getId(), false);
 			final List<NodeGroup> nodeGroups = LandscapeSystem.getNodeGroups();
 			for (final NodeGroup nodeModel : nodeGroups) {
-				nodeGroupState.put(nodeModel.getId(), true);
+				nodeGroupState.put(nodeModel.getId(), false);
 			}
 		}
 
@@ -299,7 +299,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	@Override
 	public void onMessage(final WebSocket conn, final String message) {
-		LOGGER.info("Message from client: " + message);
+		// LOGGER.info("Message from client: " + message);
 		new Thread(() -> {
 			final JSONArray queue = new JSONArray(message);
 			for (int i = 0; i < queue.length(); i++) {
@@ -370,8 +370,9 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 					// forward update from user to all other users
 					broadcastAllBut(JSONmessage, id);
+					// broadcastAllBut(JSONmessage, id);
 					break;
-				case "receive_nodeGroup_update":
+				case "receive_nodegroup_update":
 					final Long nodeGroupID = JSONmessage.getLong("id");
 					final Boolean nodeGroupOpened = JSONmessage.getBoolean("isOpen");
 					nodeGroupState.put(nodeGroupID, nodeGroupOpened);
