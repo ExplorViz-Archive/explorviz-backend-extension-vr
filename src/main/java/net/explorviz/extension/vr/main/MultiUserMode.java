@@ -319,7 +319,23 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 				disconnectMessage.put("id", id);
 				broadcastAll(disconnectMessage);
 				break;
+			case "receive_system_update":
+				final Long systemID = JSONmessage.getLong("id");
+				final Boolean systemOpened = JSONmessage.getBoolean("isOpen");
+				systemState.put(systemID, systemOpened);
 
+				// forward update from user to all other users
+				broadcastAllBut(JSONmessage, id);
+
+				break;
+			case "receive_nodeGroup_update":
+				final Long nodeGroupID = JSONmessage.getLong("id");
+				final Boolean nodeGroupOpened = JSONmessage.getBoolean("isOpen");
+				nodeGroupState.put(nodeGroupID, nodeGroupOpened);
+
+				// forward update from user to all other users
+				broadcastAllBut(JSONmessage, id);
+				break;
 			}
 		}
 		// }).start();
