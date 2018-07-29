@@ -71,8 +71,10 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 				for (final long userID : queues.keySet()) {
 					if (conns.containsKey(userID)) {
 						final JSONArray queue = queues.get(userID);
-						final WebSocket conn = conns.get(userID);
-						conn.send(queue.toString());
+						if (queue.length() > 0) {
+							final WebSocket conn = conns.get(userID);
+							conn.send(queue.toString());
+						}
 					}
 				}
 				queues.clear();
@@ -151,15 +153,13 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	}
 
 	private void enqueue(final long userID, final JSONObject message) {
-		final JSONArray queue;
-
 		synchronized (queues) {
 			if (!queues.containsKey(userID)) {
 				queues.put(userID, new JSONArray());
 			}
-			queue = queues.get(userID);
+			final JSONArray queue = queues.get(userID);
+			queue.put(message);
 		}
-		queue.put(message);
 	}
 
 	@Override
@@ -195,15 +195,17 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	private void userConnecting(final long userID) {
 		// message other user about the new user
-		final JSONObject connectingMessage = new JSONObject();
-		connectingMessage.put("event", "receive_user_connecting");
-		connectingMessage.put("id", userID);
-		broadcastAllBut(connectingMessage, userID);
+		final JSONObject userConnectingMessage = new JSONObject();
+		userConnectingMessage.put("event", "receive_user_connecting");
+		userConnectingMessage.put("id", userID);
+		broadcastAllBut(userConnectingMessage, userID);
 
-		connectingMessage.remove("event");
-		connectingMessage.put("event", "receive_self_connecting");
+		final JSONObject selfConnectingMessage = new JSONObject();
 
-		enqueue(userID, connectingMessage);
+		selfConnectingMessage.put("id", userID);
+		selfConnectingMessage.put("event", "receive_self_connecting");
+
+		enqueue(userID, selfConnectingMessage);
 
 	}
 
@@ -226,7 +228,6 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		final JSONObject initMessage = new JSONObject();
 		final JSONArray usersArray = new JSONArray();
 		initMessage.put("event", "receive_self_connected");
-		initMessage.put("id", userID);
 		synchronized (users) {
 			for (final UserModel userData : users.values()) {
 				if (userData.getState().equals("connected")) {
@@ -299,87 +300,88 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	@Override
 	public void onMessage(final WebSocket conn, final String message) {
 		LOGGER.info("Message from client: " + message);
-		// new Thread(() -> {
-		final JSONArray queue = new JSONArray(message);
-		for (int i = 0; i < queue.length(); i++) {
-			final JSONObject JSONmessage = queue.getJSONObject(i);
-			final String event = JSONmessage.getString("event");
-			final long id = getIDByWebSocket(conn);
-			final UserModel user;
+		new Thread(() -> {
+			final JSONArray queue = new JSONArray(message);
+			for (int i = 0; i < queue.length(); i++) {
+				final JSONObject JSONmessage = queue.getJSONObject(i);
+				final String event = JSONmessage.getString("event");
+				final long id = getIDByWebSocket(conn);
+				final UserModel user;
 
-			synchronized (users) {
-				user = users.get(id);
-			}
-
-			switch (event) {
-			case "receive_user_positions":
-				JSONmessage.put("id", id);
-				broadcastAllBut(JSONmessage, id);
-				break;
-			case "receive_connect_request":
-				final String name = JSONmessage.getString("name");
-				user.setUserName(name);
-				userConnected(id, name);
-				break;
-			case "receive_user_controllers":
-				if (JSONmessage.has("connect")) {
-					final JSONObject controllers = JSONmessage.getJSONObject("connect");
-					if (controllers.has("controller1")) {
-						user.getController1().setName(controllers.getString("controller1"));
-					}
-					if (controllers.has("controller2")) {
-						user.getController2().setName(controllers.getString("controller2"));
-					}
+				synchronized (users) {
+					user = users.get(id);
 				}
-				if (JSONmessage.has("disconnect")) {
-					final JSONArray controllers = JSONmessage.getJSONArray("disconnect");
-					for (int j = 0; j < controllers.length(); j++) {
-						if (controllers.get(j) == "controller1") {
-							user.getController1().setName(null);
+
+				switch (event) {
+				case "receive_user_positions":
+					// LOGGER.info("Positions from " + id + ": " + JSONmessage.toString());
+					JSONmessage.put("id", id);
+					broadcastAllBut(JSONmessage, id);
+					break;
+				case "receive_connect_request":
+					LOGGER.info(JSONmessage.toString());
+					final String name = JSONmessage.getString("name");
+					user.setUserName(name);
+					userConnected(id, name);
+					break;
+				case "receive_user_controllers":
+					if (JSONmessage.has("connect")) {
+						final JSONObject controllers = JSONmessage.getJSONObject("connect");
+						if (controllers.has("controller1")) {
+							user.getController1().setName(controllers.getString("controller1"));
 						}
-						if (controllers.get(j) == "controller2") {
-							user.getController2().setName(null);
+						if (controllers.has("controller2")) {
+							user.getController2().setName(controllers.getString("controller2"));
 						}
 					}
-				}
-				JSONmessage.put("id", id);
-				broadcastAllBut(JSONmessage, id);
-				break;
-			case "receive_disconnect_request":
-				synchronized (conn) {
+					if (JSONmessage.has("disconnect")) {
+						final JSONArray controllers = JSONmessage.getJSONArray("disconnect");
+						for (int j = 0; j < controllers.length(); j++) {
+							if (controllers.get(j) == "controller1") {
+								user.getController1().setName(null);
+							}
+							if (controllers.get(j) == "controller2") {
+								user.getController2().setName(null);
+							}
+						}
+					}
+					JSONmessage.put("id", id);
+					broadcastAllBut(JSONmessage, id);
+					break;
+				case "receive_disconnect_request":
 					if (conn.isOpen())
 						conn.close();
-				}
-				synchronized (conns) {
-					conns.remove(id);
-				}
-				synchronized (users) {
-					users.remove(id);
-				}
-				final JSONObject disconnectMessage = new JSONObject();
-				disconnectMessage.put("event", "receive_user_disconnect");
-				disconnectMessage.put("id", id);
-				broadcastAll(disconnectMessage);
-				break;
-			case "receive_system_update":
-				final Long systemID = JSONmessage.getLong("id");
-				final Boolean systemOpened = JSONmessage.getBoolean("isOpen");
-				systemState.put(systemID, systemOpened);
 
-				// forward update from user to all other users
-				broadcastAllBut(JSONmessage, id);
-				break;
-			case "receive_nodeGroup_update":
-				final Long nodeGroupID = JSONmessage.getLong("id");
-				final Boolean nodeGroupOpened = JSONmessage.getBoolean("isOpen");
-				nodeGroupState.put(nodeGroupID, nodeGroupOpened);
+					synchronized (conns) {
+						conns.remove(id);
+					}
+					synchronized (users) {
+						users.remove(id);
+					}
+					final JSONObject disconnectMessage = new JSONObject();
+					disconnectMessage.put("event", "receive_user_disconnect");
+					disconnectMessage.put("id", id);
+					broadcastAll(disconnectMessage);
+					break;
+				case "receive_system_update":
+					final Long systemID = JSONmessage.getLong("id");
+					final Boolean systemOpened = JSONmessage.getBoolean("isOpen");
+					systemState.put(systemID, systemOpened);
 
-				// forward update from user to all other users
-				broadcastAllBut(JSONmessage, id);
-				break;
+					// forward update from user to all other users
+					broadcastAllBut(JSONmessage, id);
+					break;
+				case "receive_nodeGroup_update":
+					final Long nodeGroupID = JSONmessage.getLong("id");
+					final Boolean nodeGroupOpened = JSONmessage.getBoolean("isOpen");
+					nodeGroupState.put(nodeGroupID, nodeGroupOpened);
+
+					// forward update from user to all other users
+					broadcastAllBut(JSONmessage, id);
+					break;
+				}
 			}
-		}
-		// }).start();
+		}).start();
 
 	}
 
