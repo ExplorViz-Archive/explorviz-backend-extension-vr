@@ -122,21 +122,17 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	private void sendLandscape(final Long userID) {
 		final JSONArray systemArray = new JSONArray();
 		for (final Map.Entry<Long, Boolean> entry : systemState.entrySet()) {
-			final Long id = entry.getKey();
-			final Boolean isOpen = entry.getValue();
 			final JSONObject systemObj = new JSONObject();
-			systemObj.put("id", id);
-			systemObj.put("opened", isOpen);
+			systemObj.put("id", entry.getKey());
+			systemObj.put("opened", entry.getValue());
 			systemArray.put(systemObj);
 		}
 
 		final JSONArray nodeGroupArray = new JSONArray();
 		for (final Map.Entry<Long, Boolean> entry : nodeGroupState.entrySet()) {
-			final Long id = entry.getKey();
-			final Boolean isOpen = entry.getValue();
 			final JSONObject nodeGroupObj = new JSONObject();
-			nodeGroupObj.put("id", id);
-			nodeGroupObj.put("opened", isOpen);
+			nodeGroupObj.put("id", entry.getKey());
+			nodeGroupObj.put("opened", entry.getValue());
 			nodeGroupArray.put(nodeGroupObj);
 		}
 
