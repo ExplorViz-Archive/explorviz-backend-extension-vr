@@ -367,7 +367,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 				systemState.put(systemID, systemOpened);
 
 				// forward update from user to all other users
-				broadcastAll(JSONmessage);
+				broadcastAllBut(JSONmessage, id);
 				// broadcastAllBut(JSONmessage, id);
 				break;
 			case "receive_nodeGroup_update":
