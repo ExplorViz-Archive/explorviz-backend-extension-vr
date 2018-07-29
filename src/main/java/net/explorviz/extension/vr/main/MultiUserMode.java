@@ -1,9 +1,9 @@
 package net.explorviz.extension.vr.main;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
@@ -14,8 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.explorviz.api.ExtensionAPIImpl;
-import net.explorviz.extension.vr.model.NodeGroupModel;
-import net.explorviz.extension.vr.model.SystemModel;
 import net.explorviz.extension.vr.model.UserModel;
 import net.explorviz.model.landscape.Landscape;
 import net.explorviz.model.landscape.NodeGroup;
@@ -31,10 +29,12 @@ import net.explorviz.model.landscape.System;
 public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	private Thread multiUserThread;
-	private final ArrayList<SystemModel> systems = new ArrayList<>();
+	// private final ArrayList<SystemModel> systems = new ArrayList<>();
 	private static final int TCP_PORT = 4444;
 	private final HashMap<Long, WebSocket> conns;
 	private final HashMap<Long, UserModel> users;
+	private final HashMap<Long, Boolean> systemState;
+	private final HashMap<Long, Boolean> nodeGroupState;
 	private final boolean running = true;
 	private final HashMap<Long, JSONArray> queues;
 
@@ -78,7 +78,6 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	@Override
 	public void start() {
-		// initializeLandscapeModel();
 		super.start();
 		LOGGER.info("MultiUserMode: starting");
 
@@ -94,57 +93,55 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		conns = new HashMap<>();
 		users = new HashMap<>();
 		queues = new HashMap<>();
+		systemState = new HashMap<>();
+		nodeGroupState = new HashMap<>();
 		LOGGER.info("MultiUserMode: Websocket constructed");
 	}
 
 	private void initializeLandscapeModel() {
 		LOGGER.info("Initialize landscape");
-		systems.clear();
+		// empty old Hashmaps for new incoming data
+		systemState.clear();
+		nodeGroupState.clear();
+
 		final ExtensionAPIImpl coreAPI = ExtensionAPIImpl.getInstance();
 		final Landscape landscape = coreAPI.getLatestLandscape();
 
 		final List<System> landscapeSystems = landscape.getSystems();
 
-		LOGGER.info("landscapeSystems length: " + landscapeSystems.size());
-
-		// copy ids of systems and nodegroups to own model in order to keep track of
-		// their visual state in the frontend
+		// copy ids of systems and nodegroups to Hashmaps and initialize open state with
+		// true
 		for (final System LandscapeSystem : landscapeSystems) {
+			systemState.put(LandscapeSystem.getId(), true);
 			final List<NodeGroup> nodeGroups = LandscapeSystem.getNodeGroups();
-			final ArrayList<NodeGroupModel> nodeModels = new ArrayList<NodeGroupModel>();
 			for (final NodeGroup nodeModel : nodeGroups) {
-				final NodeGroupModel nodeGroup = new NodeGroupModel();
-				nodeGroup.setId(nodeModel.getId());
-				nodeModels.add(nodeGroup);
+				nodeGroupState.put(nodeModel.getId(), true);
 			}
-			final SystemModel system = new SystemModel(nodeModels);
-			system.setId(LandscapeSystem.getId());
-			systems.add(system);
 		}
-		LOGGER.info("systems length: " + systems.size());
 
 	}
 
 	private void sendLandscape(final Long userID) {
 		final JSONArray systemArray = new JSONArray();
-		for (final SystemModel systemModel : systems) {
-			final JSONArray nodeGroupArray = new JSONArray();
-			for (final NodeGroupModel nodeGroupModel : systemModel.getNodeGroups()) {
-				final JSONObject nodeGroupObj = new JSONObject();
-				nodeGroupObj.put("id", nodeGroupModel.getId());
-				nodeGroupObj.put("opened", nodeGroupModel.isOpened());
-				nodeGroupArray.put(nodeGroupObj);
-			}
+		for (final Map.Entry<Long, Boolean> entry : systemState.entrySet()) {
 			final JSONObject systemObj = new JSONObject();
-			systemObj.put("id", systemModel.getId());
-			systemObj.put("opened", systemModel.isOpened());
-			systemObj.put("nodeGroups", nodeGroupArray);
+			systemObj.put("id", entry.getKey());
+			systemObj.put("opened", entry.getValue());
 			systemArray.put(systemObj);
+		}
+
+		final JSONArray nodeGroupArray = new JSONArray();
+		for (final Map.Entry<Long, Boolean> entry : nodeGroupState.entrySet()) {
+			final JSONObject nodeGroupObj = new JSONObject();
+			nodeGroupObj.put("id", entry.getKey());
+			nodeGroupObj.put("opened", entry.getValue());
+			nodeGroupArray.put(nodeGroupObj);
 		}
 
 		final JSONObject landscapeObj = new JSONObject();
 		landscapeObj.put("event", "receive_landscape");
 		landscapeObj.put("systems", systemArray);
+		landscapeObj.put("nodeGroups", nodeGroupArray);
 
 		enqueue(userID, landscapeObj);
 	}
@@ -159,6 +156,11 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	@Override
 	public void onOpen(final WebSocket conn, final ClientHandshake handshake) {
+
+		// initialize landscape when first user connects
+		if (users.keySet().isEmpty()) {
+			initializeLandscapeModel();
+		}
 
 		final UserModel user = new UserModel();
 		final long clientID = user.getId();
