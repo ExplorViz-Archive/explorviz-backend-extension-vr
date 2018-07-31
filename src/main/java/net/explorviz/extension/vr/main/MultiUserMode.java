@@ -217,7 +217,6 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		synchronized (users) {
 			user = users.get(userID);
 		}
-		user.setState("connected");
 		// message other user about the new user
 		final JSONObject connectedMessage = new JSONObject();
 		final JSONObject userObj = new JSONObject();
@@ -250,6 +249,8 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 		// send current state of landscape to new user
 		sendLandscape(userID);
+
+		user.setState("connected");
 	}
 
 	/**
@@ -261,7 +262,8 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	public void broadcastAll(final JSONObject msg) {
 		synchronized (users) {
 			for (final long userID : users.keySet()) {
-				enqueue(userID, msg);
+				if (users.get(userID).getState() == "connected")
+					enqueue(userID, msg);
 			}
 		}
 	}
@@ -277,7 +279,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	public void broadcastAllBut(final JSONObject msg, final long userID) {
 		synchronized (users) {
 			for (final long id : users.keySet()) {
-				if (userID != id)
+				if (userID != id && users.get(id).getState() == "connected")
 					enqueue(id, msg);
 			}
 		}
