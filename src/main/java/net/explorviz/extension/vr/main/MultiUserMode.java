@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.explorviz.api.ExtensionAPIImpl;
+import net.explorviz.extension.vr.model.ApplicationModel;
 import net.explorviz.extension.vr.model.UserModel;
 import net.explorviz.model.landscape.Landscape;
 import net.explorviz.model.landscape.NodeGroup;
@@ -35,6 +36,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	private final HashMap<Long, UserModel> users;
 	private final HashMap<Long, Boolean> systemState;
 	private final HashMap<Long, Boolean> nodeGroupState;
+	private final HashMap<Long, ApplicationModel> apps;
 	private final boolean running = true;
 	private final HashMap<Long, JSONArray> queues;
 
@@ -101,6 +103,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		queues = new HashMap<>();
 		systemState = new HashMap<>();
 		nodeGroupState = new HashMap<>();
+		apps = new HashMap<>();
 		LOGGER.info("MultiUserMode: Websocket constructed");
 	}
 
@@ -380,6 +383,51 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					nodeGroupState.put(nodeGroupID, nodeGroupOpened);
 
 					// forward update from user to all other users
+					broadcastAllBut(JSONmessage, id);
+					break;
+				case "receive_app_opened":
+					LOGGER.info(JSONmessage.toString());
+					final Long appID = JSONmessage.getLong("id");
+					ApplicationModel appModel;
+
+					// add app to Hashmap or get app from Hashmap
+					if (apps.containsKey(appID)) {
+						appModel = apps.get(appID);
+					} else {
+						appModel = new ApplicationModel();
+						appModel.setId(appID);
+						apps.put(id, appModel);
+					}
+
+					appModel.setOpen(true);
+
+					final JSONArray jsonPosition = JSONmessage.getJSONArray("position");
+					final float[] position = new float[jsonPosition.length()];
+					for (int p = 0; p < jsonPosition.length(); p++) {
+						position[p] = jsonPosition.getFloat(p);
+					}
+					appModel.setPosition(position);
+
+					final JSONArray jsonQuaternion = JSONmessage.getJSONArray("quaternion");
+					final float[] quaternion = new float[jsonQuaternion.length()];
+					for (int q = 0; q < jsonQuaternion.length(); q++) {
+						quaternion[q] = jsonQuaternion.getFloat(q);
+					}
+					appModel.setPosition(quaternion);
+
+					broadcastAllBut(JSONmessage, id);
+					break;
+				case "receive_app_closed":
+					LOGGER.info(JSONmessage.toString());
+					final Long applicationID = JSONmessage.getLong("id");
+
+					apps.remove(applicationID);
+
+					broadcastAllBut(JSONmessage, id);
+					break;
+				case "receive_app_released":
+					LOGGER.info(JSONmessage.toString());
+
 					broadcastAllBut(JSONmessage, id);
 					break;
 				}
