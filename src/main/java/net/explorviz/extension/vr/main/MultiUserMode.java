@@ -288,6 +288,12 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	@Override
 	public void onClose(final WebSocket conn, final int code, final String reason, final boolean remote) {
 		final long id = getIDByWebSocket(conn);
+
+		final JSONObject disconnectMessage = new JSONObject();
+		disconnectMessage.put("event", "receive_user_disconnect");
+		disconnectMessage.put("id", id);
+		broadcastAllBut(disconnectMessage, id);
+
 		if (id != -1) {
 			synchronized (conns) {
 				conns.remove(id);
