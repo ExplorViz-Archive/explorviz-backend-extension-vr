@@ -22,7 +22,7 @@ public class ApplicationModel extends BaseModel {
 	}
 
 	public float[] getQuaternion() {
-		final float[] quaternion = { xQuat, yQuat, zQuat, zQuat };
+		final float[] quaternion = { xQuat, yQuat, zQuat, wQuat };
 		return quaternion;
 	}
 

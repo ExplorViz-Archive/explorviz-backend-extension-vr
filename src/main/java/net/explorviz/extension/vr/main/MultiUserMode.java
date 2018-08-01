@@ -147,10 +147,22 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 			nodeGroupArray.put(nodeGroupObj);
 		}
 
+		final JSONArray appArray = new JSONArray();
+		for (final Map.Entry<Long, ApplicationModel> appEntry : apps.entrySet()) {
+			final ApplicationModel app = appEntry.getValue();
+
+			final JSONObject appObj = new JSONObject();
+			appObj.put("id", app.getId());
+			appObj.put("position", app.getPosition());
+			appObj.put("quaternion", app.getQuaternion());
+			appArray.put(appObj);
+		}
+
 		final JSONObject landscapeObj = new JSONObject();
 		landscapeObj.put("event", "receive_landscape");
 		landscapeObj.put("systems", systemArray);
 		landscapeObj.put("nodeGroups", nodeGroupArray);
+		landscapeObj.put("openApps", appArray);
 
 		enqueue(userID, landscapeObj);
 	}
@@ -251,6 +263,36 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		sendLandscape(userID);
 
 		user.setState("connected");
+	}
+
+	private void updateOpenApp(final JSONObject JSONmessage) {
+		final Long appID = JSONmessage.getLong("id");
+		ApplicationModel appModel;
+
+		// add app to Hashmap or get app from Hashmap
+		if (apps.containsKey(appID)) {
+			appModel = apps.get(appID);
+		} else {
+			appModel = new ApplicationModel();
+			appModel.setId(appID);
+			apps.put(appID, appModel);
+		}
+
+		appModel.setOpen(true);
+
+		final JSONArray jsonPosition = JSONmessage.getJSONArray("position");
+		final float[] position = new float[jsonPosition.length()];
+		for (int p = 0; p < jsonPosition.length(); p++) {
+			position[p] = jsonPosition.getFloat(p);
+		}
+		appModel.setPosition(position);
+
+		final JSONArray jsonQuaternion = JSONmessage.getJSONArray("quaternion");
+		final float[] quaternion = new float[jsonQuaternion.length()];
+		for (int q = 0; q < jsonQuaternion.length(); q++) {
+			quaternion[q] = jsonQuaternion.getFloat(q);
+		}
+		appModel.setQuaternion(quaternion);
 	}
 
 	/**
@@ -393,34 +435,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					break;
 				case "receive_app_opened":
 					LOGGER.info(JSONmessage.toString());
-					final Long appID = JSONmessage.getLong("id");
-					ApplicationModel appModel;
-
-					// add app to Hashmap or get app from Hashmap
-					if (apps.containsKey(appID)) {
-						appModel = apps.get(appID);
-					} else {
-						appModel = new ApplicationModel();
-						appModel.setId(appID);
-						apps.put(id, appModel);
-					}
-
-					appModel.setOpen(true);
-
-					final JSONArray jsonPosition = JSONmessage.getJSONArray("position");
-					final float[] position = new float[jsonPosition.length()];
-					for (int p = 0; p < jsonPosition.length(); p++) {
-						position[p] = jsonPosition.getFloat(p);
-					}
-					appModel.setPosition(position);
-
-					final JSONArray jsonQuaternion = JSONmessage.getJSONArray("quaternion");
-					final float[] quaternion = new float[jsonQuaternion.length()];
-					for (int q = 0; q < jsonQuaternion.length(); q++) {
-						quaternion[q] = jsonQuaternion.getFloat(q);
-					}
-					appModel.setPosition(quaternion);
-
+					updateOpenApp(JSONmessage);
 					broadcastAllBut(JSONmessage, id);
 					break;
 				case "receive_app_closed":
@@ -439,7 +454,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					break;
 				case "receive_app_released":
 					LOGGER.info(JSONmessage.toString());
-
+					updateOpenApp(JSONmessage);
 					broadcastAllBut(JSONmessage, id);
 					break;
 				}
