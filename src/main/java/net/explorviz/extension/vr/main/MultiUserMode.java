@@ -433,6 +433,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					break;
 				case "receive_app_binded":
 					LOGGER.info(JSONmessage.toString());
+					JSONmessage.put("userID", id);
 
 					broadcastAllBut(JSONmessage, id);
 					break;
