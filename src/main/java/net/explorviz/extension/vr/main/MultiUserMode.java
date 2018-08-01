@@ -112,6 +112,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		// empty old Hashmaps for new incoming data
 		systemState.clear();
 		nodeGroupState.clear();
+		apps.clear();
 
 		final ExtensionAPIImpl coreAPI = ExtensionAPIImpl.getInstance();
 		final Landscape landscape = coreAPI.getLatestLandscape();
