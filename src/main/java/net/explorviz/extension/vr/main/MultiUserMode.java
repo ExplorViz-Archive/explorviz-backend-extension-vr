@@ -156,7 +156,14 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 			appObj.put("id", app.getId());
 			appObj.put("position", app.getPosition());
 			appObj.put("quaternion", app.getQuaternion());
+
+			final JSONArray componentArray = new JSONArray();
+			for (final Long componentID : app.getOpenComponents()) {
+				componentArray.put(componentID);
+			}
+			appObj.put("openComponents", componentArray);
 			appArray.put(appObj);
+
 		}
 
 		final JSONObject landscapeObj = new JSONObject();
@@ -442,9 +449,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 				case "receive_app_closed":
 					LOGGER.info(JSONmessage.toString());
 					final Long applicationID = JSONmessage.getLong("id");
-
 					apps.remove(applicationID);
-
 					broadcastAllBut(JSONmessage, id);
 					break;
 				case "receive_app_binded":
