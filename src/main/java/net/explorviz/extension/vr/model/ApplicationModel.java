@@ -44,8 +44,12 @@ public class ApplicationModel extends BaseModel {
 		this.isOpen = isOpen;
 	}
 
-	public void addOpenComponent(final Long id) {
+	public void openComponent(final Long id) {
 		openComponents.add(id);
+	}
+
+	public void closeComponent(final Long id) {
+		openComponents.remove(id);
 	}
 
 	public ArrayList<Long> getOpenComponents() {

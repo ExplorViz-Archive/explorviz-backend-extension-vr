@@ -458,10 +458,13 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					updateOpenApp(JSONmessage);
 					broadcastAllBut(JSONmessage, id);
 					break;
-				case "receive_component_opened":
+				case "receive_component_update":
 					LOGGER.info(JSONmessage.toString());
-					apps.get(JSONmessage.getLong("appID")).addOpenComponent(JSONmessage.getLong("componentID"));
-
+					if (JSONmessage.getBoolean("isOpened")) {
+						apps.get(JSONmessage.getLong("appID")).openComponent(JSONmessage.getLong("componentID"));
+					} else {
+						apps.get(JSONmessage.getLong("appID")).closeComponent(JSONmessage.getLong("componentID"));
+					}
 					broadcastAllBut(JSONmessage, id);
 				}
 			}
