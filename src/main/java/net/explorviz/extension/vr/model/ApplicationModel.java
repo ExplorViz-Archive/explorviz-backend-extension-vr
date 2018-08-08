@@ -5,6 +5,9 @@ import java.util.ArrayList;
 public class ApplicationModel extends BaseModel {
 
 	boolean isOpen;
+	boolean isBound;
+	Long boundByUser;
+
 	private final ArrayList<Long> openComponents;
 
 	public ApplicationModel() {
@@ -29,6 +32,26 @@ public class ApplicationModel extends BaseModel {
 
 	public ArrayList<Long> getOpenComponents() {
 		return openComponents;
+	}
+
+	public void setBound(final boolean isBound) {
+		this.isBound = isBound;
+	}
+
+	public boolean isBound() {
+		return isBound;
+	}
+
+	public void setBoundByUser(final Long userID) {
+		this.boundByUser = userID;
+	}
+
+	public boolean isBoundByUser(final Long userID) {
+		if (isBound && userID == boundByUser) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 }

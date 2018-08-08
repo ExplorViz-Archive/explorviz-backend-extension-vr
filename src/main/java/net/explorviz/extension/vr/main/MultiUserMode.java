@@ -337,7 +337,8 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	/**
 	 * Sends a message (usually JSON as a string) to all connected users
 	 *
-	 * @param msg The message which all users should receive
+	 * @param msg
+	 *            The message which all users should receive
 	 */
 	public void broadcastAll(final JSONObject msg) {
 		synchronized (users) {
@@ -351,8 +352,10 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	/**
 	 * Sends a message (usually JSON as a string) to all but one connected users
 	 *
-	 * @param msg    The message which all users should receive
-	 * @param userID The user that should be excluded from the message
+	 * @param msg
+	 *            The message which all users should receive
+	 * @param userID
+	 *            The user that should be excluded from the message
 	 */
 	public void broadcastAllBut(final JSONObject msg, final long userID) {
 		synchronized (users) {
@@ -485,14 +488,12 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					broadcastAllBut(JSONmessage, id);
 					break;
 				case "receive_app_binded":
-					LOGGER.info(JSONmessage.toString());
-					JSONmessage.put("userID", id);
-
-					broadcastAllBut(JSONmessage, id);
+					bindingApp(JSONmessage, id);
 					break;
 				case "receive_app_released":
 					LOGGER.info(JSONmessage.toString());
 					updateOpenApp(JSONmessage);
+					apps.get(JSONmessage.getLong("id")).setBound(false);
 					broadcastAllBut(JSONmessage, id);
 					break;
 				case "receive_component_update":
@@ -506,7 +507,20 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 				}
 			}
 		}).start();
+	}
 
+	private void bindingApp(final JSONObject msg, final Long userID) {
+		LOGGER.info(msg.toString());
+		msg.put("userID", userID);
+		final Long appID = msg.getLong("appID");
+		final boolean isBound = apps.get(appID).isBound();
+		if (isBound) {
+			// TODO: send error msg to user
+		} else {
+			apps.get(appID).setBound(true);
+			apps.get(appID).setBoundByUser(userID);
+			broadcastAllBut(msg, userID);
+		}
 	}
 
 	private long getIDByWebSocket(final WebSocket conn) {
