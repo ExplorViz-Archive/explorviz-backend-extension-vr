@@ -1,5 +1,6 @@
 package net.explorviz.extension.vr.main;
 
+import java.awt.Color;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.List;
@@ -237,16 +238,19 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		synchronized (users) {
 			user = users.get(userID);
 		}
-		// message other user about the new user
+		// message other users about the new user
 		final JSONObject connectedMessage = new JSONObject();
 		final JSONObject userObj = new JSONObject();
 		connectedMessage.put("event", "receive_user_connected");
 		userObj.put("name", user.getUserName());
 		userObj.put("id", userID);
+		final Color color = user.getColor();
+		final JSONArray colorArray = new JSONArray(new int[] { color.getRed(), color.getGreen(), color.getBlue() });
+		userObj.put("color", colorArray);
 		connectedMessage.put("user", userObj);
 		broadcastAllBut(connectedMessage, userID);
 
-		// send user their id and all other users' id and name
+		// send user all other users' id and name
 		final JSONObject initMessage = new JSONObject();
 		final JSONArray usersArray = new JSONArray();
 		initMessage.put("event", "receive_self_connected");
@@ -256,6 +260,10 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					final JSONObject userObject = new JSONObject();
 					userObject.put("id", userData.getId());
 					userObject.put("name", userData.getUserName());
+					final Color userColor = userData.getColor();
+					final JSONArray userColorArray = new JSONArray(
+							new int[] { color.getRed(), color.getGreen(), color.getBlue() });
+					userObject.put("color", userColorArray);
 					final JSONObject controllers = new JSONObject();
 					controllers.put("controller1", userData.getController1().getName());
 					controllers.put("controller2", userData.getController2().getName());
