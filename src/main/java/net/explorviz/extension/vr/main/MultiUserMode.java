@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import net.explorviz.api.ExtensionAPIImpl;
 import net.explorviz.extension.vr.model.ApplicationModel;
+import net.explorviz.extension.vr.model.BaseModel;
 import net.explorviz.extension.vr.model.UserModel;
 import net.explorviz.model.landscape.Landscape;
 import net.explorviz.model.landscape.NodeGroup;
@@ -34,10 +35,12 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	private static final int TCP_PORT = 4444;
 	private final HashMap<Long, WebSocket> conns;
 	private final HashMap<Long, UserModel> users;
+	private final BaseModel landscape;
+	private static boolean landscapePosChanged = false;
 	private final HashMap<Long, Boolean> systemState;
 	private final HashMap<Long, Boolean> nodeGroupState;
 	private final HashMap<Long, ApplicationModel> apps;
-	private final boolean running = true;
+	private static boolean running = true;
 	private final HashMap<Long, JSONArray> queues;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(MultiUserMode.class);
@@ -101,6 +104,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		conns = new HashMap<>();
 		users = new HashMap<>();
 		queues = new HashMap<>();
+		landscape = new BaseModel();
 		systemState = new HashMap<>();
 		nodeGroupState = new HashMap<>();
 		apps = new HashMap<>();
@@ -110,6 +114,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	private void initializeLandscapeModel() {
 		LOGGER.info("Initialize landscape");
 		// empty old Hashmaps for new incoming data
+		landscapePosChanged = false;
 		systemState.clear();
 		nodeGroupState.clear();
 		apps.clear();
@@ -171,6 +176,13 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		landscapeObj.put("systems", systemArray);
 		landscapeObj.put("nodeGroups", nodeGroupArray);
 		landscapeObj.put("openApps", appArray);
+
+		if (landscapePosChanged) {
+			final JSONObject landscapePosObj = new JSONObject();
+			landscapePosObj.put("position", landscape.getPosition());
+			landscapePosObj.put("quaternion", landscape.getQuaternion());
+			landscapeObj.put("landscape", landscapePosObj);
+		}
 
 		enqueue(userID, landscapeObj);
 	}
@@ -304,6 +316,24 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		appModel.setQuaternion(quaternion);
 	}
 
+	private void updateLandscapePosition(final JSONObject JSONmessage) {
+		landscapePosChanged = true;
+
+		final JSONArray jsonPosition = JSONmessage.getJSONArray("position");
+		final float[] position = new float[jsonPosition.length()];
+		for (int p = 0; p < jsonPosition.length(); p++) {
+			position[p] = jsonPosition.getFloat(p);
+		}
+		landscape.setPosition(position);
+
+		final JSONArray jsonQuaternion = JSONmessage.getJSONArray("quaternion");
+		final float[] quaternion = new float[jsonQuaternion.length()];
+		for (int q = 0; q < jsonQuaternion.length(); q++) {
+			quaternion[q] = jsonQuaternion.getFloat(q);
+		}
+		landscape.setQuaternion(quaternion);
+	}
+
 	/**
 	 * Sends a message (usually JSON as a string) to all connected users
 	 *
@@ -424,6 +454,10 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					disconnectMessage.put("event", "receive_user_disconnect");
 					disconnectMessage.put("id", id);
 					broadcastAll(disconnectMessage);
+					break;
+				case "receive_landscape_position":
+					updateLandscapePosition(JSONmessage);
+					broadcastAllBut(JSONmessage, id);
 					break;
 				case "receive_system_update":
 					final Long systemID = JSONmessage.getLong("id");

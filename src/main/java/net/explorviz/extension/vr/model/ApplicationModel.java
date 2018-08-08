@@ -4,8 +4,6 @@ import java.util.ArrayList;
 
 public class ApplicationModel extends BaseModel {
 
-	float xPos, yPos, zPos;
-	float xQuat, yQuat, zQuat, wQuat;
 	boolean isOpen;
 	private final ArrayList<Long> openComponents;
 
