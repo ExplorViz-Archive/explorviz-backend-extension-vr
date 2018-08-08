@@ -337,8 +337,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	/**
 	 * Sends a message (usually JSON as a string) to all connected users
 	 *
-	 * @param msg
-	 *            The message which all users should receive
+	 * @param msg The message which all users should receive
 	 */
 	public void broadcastAll(final JSONObject msg) {
 		synchronized (users) {
@@ -352,10 +351,8 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	/**
 	 * Sends a message (usually JSON as a string) to all but one connected users
 	 *
-	 * @param msg
-	 *            The message which all users should receive
-	 * @param userID
-	 *            The user that should be excluded from the message
+	 * @param msg    The message which all users should receive
+	 * @param userID The user that should be excluded from the message
 	 */
 	public void broadcastAllBut(final JSONObject msg, final long userID) {
 		synchronized (users) {
@@ -525,6 +522,12 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		ex.printStackTrace();
 		if (conn != null) {
 			final long clientID = getIDByWebSocket(conn);
+
+			final JSONObject disconnectMessage = new JSONObject();
+			disconnectMessage.put("event", "receive_user_disconnect");
+			disconnectMessage.put("id", clientID);
+			broadcastAllBut(disconnectMessage, clientID);
+
 			synchronized (conns) {
 				conns.remove(clientID);
 			}
