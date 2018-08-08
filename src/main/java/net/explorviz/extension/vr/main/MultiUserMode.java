@@ -189,13 +189,14 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	public void onOpen(final WebSocket conn, final ClientHandshake handshake) {
 
 		boolean noUsers = false;
-		// initialize landscape when first user connects
+
 		synchronized (users) {
 			if (users.keySet().isEmpty()) {
 				noUsers = true;
 			}
 		}
 
+		// initialize landscape when first user connects
 		if (noUsers)
 			initializeLandscapeModel();
 

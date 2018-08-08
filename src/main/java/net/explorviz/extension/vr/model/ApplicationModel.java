@@ -13,29 +13,6 @@ public class ApplicationModel extends BaseModel {
 		openComponents = new ArrayList<>();
 	}
 
-	public float[] getPosition() {
-		final float[] coordinates = { xPos, yPos, zPos };
-		return coordinates;
-	}
-
-	public void setPosition(final float[] coordinates) {
-		this.xPos = coordinates[0];
-		this.yPos = coordinates[1];
-		this.zPos = coordinates[2];
-	}
-
-	public float[] getQuaternion() {
-		final float[] quaternion = { xQuat, yQuat, zQuat, wQuat };
-		return quaternion;
-	}
-
-	public void setQuaternion(final float[] quaternion) {
-		this.xQuat = quaternion[0];
-		this.yQuat = quaternion[1];
-		this.zQuat = quaternion[2];
-		this.wQuat = quaternion[3];
-	}
-
 	public boolean isOpen() {
 		return this.isOpen;
 	}
