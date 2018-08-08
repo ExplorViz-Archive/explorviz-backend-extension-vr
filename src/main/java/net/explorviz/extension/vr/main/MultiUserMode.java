@@ -275,7 +275,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					userObject.put("name", userData.getUserName());
 					final Color userColor = userData.getColor();
 					final JSONArray userColorArray = new JSONArray(
-							new int[] { color.getRed(), color.getGreen(), color.getBlue() });
+							new int[] { userColor.getRed(), userColor.getGreen(), userColor.getBlue() });
 					userObject.put("color", userColorArray);
 					final JSONObject controllers = new JSONObject();
 					controllers.put("controller1", userData.getController1().getName());
