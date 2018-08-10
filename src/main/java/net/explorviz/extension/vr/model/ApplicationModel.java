@@ -46,6 +46,12 @@ public class ApplicationModel extends BaseModel {
 		this.boundByUser = userID;
 	}
 
+	public void setUnboundByUser(final Long userID) {
+		if (isBoundByUser(userID)) {
+			setBound(false);
+		}
+	}
+
 	public boolean isBoundByUser(final Long userID) {
 		if (isBound && userID == boundByUser) {
 			return true;

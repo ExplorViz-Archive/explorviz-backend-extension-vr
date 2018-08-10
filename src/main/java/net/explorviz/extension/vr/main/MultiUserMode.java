@@ -449,19 +449,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					broadcastAllBut(JSONmessage, id);
 					break;
 				case "receive_disconnect_request":
-					if (conn.isOpen())
-						conn.close();
-
-					synchronized (conns) {
-						conns.remove(id);
-					}
-					synchronized (users) {
-						users.remove(id);
-					}
-					final JSONObject disconnectMessage = new JSONObject();
-					disconnectMessage.put("event", "receive_user_disconnect");
-					disconnectMessage.put("id", id);
-					broadcastAll(disconnectMessage);
+					disconnectUser(conn);
 					break;
 				case "receive_landscape_position":
 					updateLandscapePosition(JSONmessage);
@@ -533,19 +521,16 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		}
 	}
 
-	private long getIDByWebSocket(final WebSocket conn) {
-		for (final long id : conns.keySet()) {
-			if (conns.get(id) == conn)
-				return id;
-		}
-		return -1;
-	}
-
-	@Override
-	public void onError(final WebSocket conn, final Exception ex) {
-		ex.printStackTrace();
+	private void disconnectUser(final WebSocket conn) {
 		if (conn != null) {
 			final long clientID = getIDByWebSocket(conn);
+
+			for (final ApplicationModel app : apps.values()) {
+				app.setUnboundByUser(clientID);
+			}
+
+			if (conn.isOpen())
+				conn.close();
 
 			final JSONObject disconnectMessage = new JSONObject();
 			disconnectMessage.put("event", "receive_user_disconnect");
@@ -561,8 +546,25 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 			synchronized (queues) {
 				queues.remove(clientID);
 			}
-			LOGGER.info("ERROR from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
+
+		} else {
+			LOGGER.info("CONNECTION IS NULL");
 		}
+	}
+
+	private long getIDByWebSocket(final WebSocket conn) {
+		for (final long id : conns.keySet()) {
+			if (conns.get(id) == conn)
+				return id;
+		}
+		return -1;
+	}
+
+	@Override
+	public void onError(final WebSocket conn, final Exception ex) {
+		ex.printStackTrace();
+		disconnectUser(conn);
+		LOGGER.info("ERROR from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
 	}
 
 	@Override
