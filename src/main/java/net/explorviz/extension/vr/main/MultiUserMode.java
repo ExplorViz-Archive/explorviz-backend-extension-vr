@@ -502,6 +502,11 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 						apps.get(JSONmessage.getLong("appID")).closeComponent(JSONmessage.getLong("componentID"));
 					}
 					broadcastAllBut(JSONmessage, id);
+					break;
+				case "receive_hightlight_update":
+					LOGGER.info(JSONmessage.toString());
+					broadcastAllBut(JSONmessage, id);
+					break;
 				}
 			}
 		}).start();
