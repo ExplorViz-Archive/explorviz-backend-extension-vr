@@ -28,7 +28,7 @@ public class UserModel extends BaseModel {
 	public void removeColor() {
 		if (color != -1)
 			synchronized (assignedColors) {
-				assignedColors[color]++;
+				assignedColors[color]--;
 				color = -1;
 			}
 	}
