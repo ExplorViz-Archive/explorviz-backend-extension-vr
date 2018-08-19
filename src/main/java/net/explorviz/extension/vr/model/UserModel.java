@@ -1,7 +1,6 @@
 package net.explorviz.extension.vr.model;
 
 import java.awt.Color;
-import java.util.Random;
 
 public class UserModel extends BaseModel {
 
@@ -9,11 +8,30 @@ public class UserModel extends BaseModel {
 	private final ControllerModel controller1;
 	private final ControllerModel controller2;
 	private String state;
-	private final Color color;
 	private long timeOfLastMessage;
+	private byte color = -1;
+	private static final Color[] colors = { new Color(255, 0, 0), // red
+			new Color(0, 117, 242), // blue
+			new Color(219, 208, 0), // yellow
+			new Color(0, 209, 188), // turquoise
+			new Color(209, 0, 209), // pink
+			new Color(144, 0, 206), // purple
+			new Color(0, 175, 206), // ocean blue
+			new Color(241, 141, 0), // orange
+
+	};
+	private static byte[] assignedColors = new byte[colors.length];
 
 	public Color getColor() {
-		return color;
+		return colors[color];
+	}
+
+	public void removeColor() {
+		if (color != -1)
+			synchronized (assignedColors) {
+				assignedColors[color]--;
+				color = -1;
+			}
 	}
 
 	public String getState() {
@@ -27,26 +45,32 @@ public class UserModel extends BaseModel {
 	public UserModel() {
 		controller1 = new ControllerModel();
 		controller2 = new ControllerModel();
-		color = getRandomColor();
+		assignColor();
 	}
 
-	private Color getRandomColor() {
-		final Random ran = new Random();
-		final int x = ran.nextInt(3);
-
-		final int keep = ran.nextInt(3);
-		final float red = ran.nextFloat();
-		final float green = ran.nextFloat();
-		final float blue = ran.nextFloat();
-		final Color c = new Color(red, green, blue);
-		return c;
+	private void assignColor() {
+		synchronized (assignedColors) {
+			byte bestChoice = 0;
+			for (byte i = 0; i < assignedColors.length; i++) {
+				if (assignedColors[i] == 0) { // no user has color i yet
+					bestChoice = i;
+					break;
+				} else if (assignedColors[i] < assignedColors[bestChoice]) { // color i is less often assigned than
+																				// color bestChoice
+					bestChoice = i;
+				}
+			}
+			// assign best color choice
+			assignedColors[bestChoice]++;
+			color = bestChoice;
+		}
 	}
 
 	public UserModel(final String userName) {
 		this.userName = userName;
 		controller1 = new ControllerModel();
 		controller2 = new ControllerModel();
-		color = getRandomColor();
+		assignColor();
 	}
 
 	public String getUserName() {

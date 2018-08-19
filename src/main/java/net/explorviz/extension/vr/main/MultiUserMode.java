@@ -123,7 +123,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 							if (conn.isOpen()) {
 								conn.send(queue.toString());
 							} else {
-								removeUser(userID);
+								disconnectUser(conn);
 							}
 
 						}
@@ -420,30 +420,9 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	@Override
 	public void onClose(final WebSocket conn, final int code, final String reason, final boolean remote) {
-		final long id = getIDByWebSocket(conn);
-
-		removeUser(id);
-
-		final JSONObject disconnectMessage = new JSONObject();
-		disconnectMessage.put("event", "receive_user_disconnect");
-		disconnectMessage.put("id", id);
-		broadcastAllBut(disconnectMessage, id);
+		disconnectUser(conn);
 
 		LOGGER.info("Closed connection to " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
-	}
-
-	private void removeUser(final Long id) {
-		if (id != -1) {
-			synchronized (conns) {
-				conns.remove(id);
-			}
-			synchronized (users) {
-				users.remove(id);
-			}
-			synchronized (queues) {
-				queues.remove(id);
-			}
-		}
 	}
 
 	@Override
@@ -560,6 +539,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					break;
 				case "receive_spectating_update":
 					LOGGER.info(JSONmessage.toString());
+					users.get(id).setState("spectating");
 					broadcastAllBut(JSONmessage, id);
 					break;
 				}
@@ -601,7 +581,11 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 				conns.remove(clientID);
 			}
 			synchronized (users) {
-				users.remove(clientID);
+				final UserModel user = users.get(clientID);
+				if (user != null) {
+					user.removeColor();
+					users.remove(clientID);
+				}
 			}
 			synchronized (queues) {
 				queues.remove(clientID);
