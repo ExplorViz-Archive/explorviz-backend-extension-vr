@@ -14,9 +14,9 @@ public class BaseModel {
 	private static final AtomicLong ID_GENERATOR = new AtomicLong();
 
 	// position data
-	private float xPos = 0;
-	private float yPos = 0;
-	private float zPos = 0;
+	private double xPos = 0;
+	private double yPos = 0;
+	private double zPos = 0;
 	private float xQuat, yQuat, zQuat, wQuat;
 
 	@Id(LongIdHandler.class)
@@ -34,24 +34,24 @@ public class BaseModel {
 		this.id = id;
 	}
 
-	public float[] getPosition() {
-		final float[] coordinates = { xPos, yPos, zPos };
+	public double[] getPosition() {
+		final double[] coordinates = { xPos, yPos, zPos };
 		return coordinates;
 	}
 
-	public void setPosition(final float[] coordinates) {
+	public void setPosition(final double[] coordinates) {
 		this.xPos = coordinates[0];
 		this.yPos = coordinates[1];
 		this.zPos = coordinates[2];
 	}
 
-	public void setDeltaPosition(final float[] coordinates) {
+	public void setDeltaPosition(final double[] coordinates) {
 		this.xPos += coordinates[0];
 		this.yPos += coordinates[1];
 		this.zPos += coordinates[2];
 	}
 
-	public void setPosition(final float x, final float y, final float z) {
+	public void setPosition(final double x, final double y, final double z) {
 		this.xPos = x;
 		this.yPos = y;
 		this.zPos = z;

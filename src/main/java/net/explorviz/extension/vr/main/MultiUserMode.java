@@ -357,7 +357,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		appModel.setOpen(true);
 
 		final JSONArray jsonPosition = JSONmessage.getJSONArray("position");
-		final float[] position = new float[jsonPosition.length()];
+		final double[] position = new double[jsonPosition.length()];
 		for (int p = 0; p < jsonPosition.length(); p++) {
 			position[p] = jsonPosition.getFloat(p);
 		}
@@ -375,7 +375,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		landscapePosChanged = true;
 
 		final JSONArray jsonPosition = JSONmessage.getJSONArray("deltaPosition");
-		final float[] deltaPosition = new float[jsonPosition.length()];
+		final double[] deltaPosition = new double[jsonPosition.length()];
 		for (int p = 0; p < jsonPosition.length(); p++) {
 			deltaPosition[p] = jsonPosition.getFloat(p);
 		}
