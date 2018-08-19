@@ -7,7 +7,7 @@ public class UserModel extends BaseModel {
 	private String userName;
 	private final ControllerModel controller1;
 	private final ControllerModel controller2;
-	private String state;
+	private State state;
 	private long timeOfLastMessage;
 	private byte color = -1;
 	private static final Color[] colors = { new Color(255, 0, 0), // red
@@ -18,9 +18,12 @@ public class UserModel extends BaseModel {
 			new Color(144, 0, 206), // purple
 			new Color(0, 175, 206), // ocean blue
 			new Color(241, 141, 0), // orange
-
 	};
 	private static byte[] assignedColors = new byte[colors.length];
+
+	public enum State {
+		CONNECTING, CONNECTED, SPECTATING
+	};
 
 	public Color getColor() {
 		return colors[color];
@@ -34,11 +37,11 @@ public class UserModel extends BaseModel {
 			}
 	}
 
-	public String getState() {
+	public State getState() {
 		return state;
 	}
 
-	public void setState(final String state) {
+	public void setState(final State state) {
 		this.state = state;
 	}
 
