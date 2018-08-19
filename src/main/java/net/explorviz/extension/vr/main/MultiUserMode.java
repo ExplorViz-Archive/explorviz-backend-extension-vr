@@ -274,7 +274,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		initMessage.put("event", "receive_self_connected");
 		synchronized (users) {
 			for (final UserModel userData : users.values()) {
-				if (userData.getState().equals("connected")) {
+				if (userData.getState().equals("connected") || userData.getState().equals("spectating")) {
 					final JSONObject userObject = new JSONObject();
 					userObject.put("id", userData.getId());
 					userObject.put("name", userData.getUserName());
@@ -350,12 +350,14 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	/**
 	 * Sends a message (usually JSON as a string) to all connected users
 	 *
-	 * @param msg The message which all users should receive
+	 * @param msg
+	 *            The message which all users should receive
 	 */
 	public void broadcastAll(final JSONObject msg) {
 		synchronized (users) {
 			for (final long userID : users.keySet()) {
-				if (users.get(userID).getState() == "connected")
+				final String state = users.get(userID).getState();
+				if (state.equals("connected") || state.equals("spectating"))
 					enqueue(userID, msg);
 			}
 		}
@@ -364,13 +366,16 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	/**
 	 * Sends a message (usually JSON as a string) to all but one connected users
 	 *
-	 * @param msg    The message which all users should receive
-	 * @param userID The user that should be excluded from the message
+	 * @param msg
+	 *            The message which all users should receive
+	 * @param userID
+	 *            The user that should be excluded from the message
 	 */
 	public void broadcastAllBut(final JSONObject msg, final long userID) {
 		synchronized (users) {
 			for (final long id : users.keySet()) {
-				if (userID != id && users.get(id).getState() == "connected")
+				final String state = users.get(id).getState();
+				if (userID != id && (state.equals("connected") || state.equals("spectating")))
 					enqueue(id, msg);
 			}
 		}
@@ -493,7 +498,10 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					break;
 				case "receive_spectating_update":
 					LOGGER.info(JSONmessage.toString());
-					users.get(id).setState("spectating");
+					if (JSONmessage.getBoolean("isSpectating"))
+						users.get(id).setState("spectating");
+					else
+						users.get(id).setState("connected");
 					broadcastAllBut(JSONmessage, id);
 					break;
 				}
