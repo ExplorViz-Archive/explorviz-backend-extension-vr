@@ -20,6 +20,7 @@ import net.explorviz.api.ExtensionAPIImpl;
 import net.explorviz.extension.vr.model.ApplicationModel;
 import net.explorviz.extension.vr.model.BaseModel;
 import net.explorviz.extension.vr.model.UserModel;
+import net.explorviz.extension.vr.model.UserModel.State;
 import net.explorviz.model.landscape.Landscape;
 import net.explorviz.model.landscape.NodeGroup;
 import net.explorviz.model.landscape.System;
@@ -261,7 +262,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 		final UserModel user = new UserModel();
 		final long clientID = user.getId();
-		user.setState("connecting");
+		user.setState(State.CONNECTING);
 		user.setTimeOfLastMessage(java.lang.System.currentTimeMillis());
 
 		synchronized (conns) {
@@ -316,7 +317,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		initMessage.put("event", "receive_self_connected");
 		synchronized (users) {
 			for (final UserModel userData : users.values()) {
-				if (userData.getState().equals("connected")) {
+				if (userData.getState() == State.CONNECTED || userData.getState() == State.SPECTATING) {
 					final JSONObject userObject = new JSONObject();
 					userObject.put("id", userData.getId());
 					userObject.put("name", userData.getUserName());
@@ -338,7 +339,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		// send current state of landscape to new user
 		sendLandscape(userID);
 
-		user.setState("connected");
+		user.setState(State.CONNECTED);
 	}
 
 	private void updateOpenApp(final JSONObject JSONmessage) {
@@ -392,12 +393,14 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	/**
 	 * Sends a message (usually JSON as a string) to all connected users
 	 *
-	 * @param msg The message which all users should receive
+	 * @param msg
+	 *            The message which all users should receive
 	 */
 	public void broadcastAll(final JSONObject msg) {
 		synchronized (users) {
 			for (final long userID : users.keySet()) {
-				if (users.get(userID).getState() == "connected")
+				final State state = users.get(userID).getState();
+				if (state == State.CONNECTED || state == State.SPECTATING)
 					enqueue(userID, msg);
 			}
 		}
@@ -406,13 +409,16 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	/**
 	 * Sends a message (usually JSON as a string) to all but one connected users
 	 *
-	 * @param msg    The message which all users should receive
-	 * @param userID The user that should be excluded from the message
+	 * @param msg
+	 *            The message which all users should receive
+	 * @param userID
+	 *            The user that should be excluded from the message
 	 */
 	public void broadcastAllBut(final JSONObject msg, final long userID) {
 		synchronized (users) {
 			for (final long id : users.keySet()) {
-				if (userID != id && users.get(id).getState() == "connected")
+				final State state = users.get(id).getState();
+				if (userID != id && (state == State.CONNECTED || state == State.SPECTATING))
 					enqueue(id, msg);
 			}
 		}
@@ -539,7 +545,10 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					break;
 				case "receive_spectating_update":
 					LOGGER.info(JSONmessage.toString());
-					users.get(id).setState("spectating");
+					if (JSONmessage.getBoolean("isSpectating"))
+						users.get(id).setState(State.SPECTATING);
+					else
+						users.get(id).setState(State.CONNECTED);
 					broadcastAllBut(JSONmessage, id);
 					break;
 				}
