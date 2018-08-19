@@ -8,6 +8,7 @@ public class UserModel extends BaseModel {
 	private final ControllerModel controller1;
 	private final ControllerModel controller2;
 	private String state;
+	private long timeOfLastMessage;
 	private byte color = -1;
 	private static final Color[] colors = { new Color(255, 0, 0), // red
 			new Color(0, 117, 242), // blue
@@ -86,6 +87,14 @@ public class UserModel extends BaseModel {
 
 	public ControllerModel getController2() {
 		return this.controller2;
+	}
+
+	public long getTimeOfLastMessage() {
+		return this.timeOfLastMessage;
+	}
+
+	public void setTimeOfLastMessage(final long time) {
+		this.timeOfLastMessage = time;
 	}
 
 }

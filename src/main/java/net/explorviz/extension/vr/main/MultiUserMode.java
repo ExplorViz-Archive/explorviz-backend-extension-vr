@@ -5,6 +5,8 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
@@ -54,6 +56,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		double delta = 0;
 		long now;
 		long lastTime = java.lang.System.nanoTime();
+		long checkedDisconnectTime = java.lang.System.nanoTime();
 
 		while (running) {
 			now = java.lang.System.nanoTime();
@@ -64,11 +67,49 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 				tick();
 				delta--;
 			}
+
+			// check if all users are still connected regulary
+			if ((now - checkedDisconnectTime) / 1000 >= 30000000) {
+				checkedDisconnectTime = now;
+				CompletableFuture.runAsync(() -> {
+					checkForDisconnects();
+				});
+
+			}
 		}
 	}
 
 	private void init() {
 		// initializeLandscapeModel();
+	}
+
+	private void checkForDisconnects() {
+		for (final UserModel user : users.values()) {
+			final long noMessageFor = user.getTimeOfLastMessage() - java.lang.System.currentTimeMillis();
+			// if user has not send a message for over 5 seconds, ping him/her
+			if (true) {
+				final JSONObject pingObj = new JSONObject();
+				pingObj.put("event", "receive_ping");
+				enqueue(user.getId(), pingObj);
+			}
+		}
+
+		// wait 20 seconds to give client a chance to respond
+		try {
+			TimeUnit.SECONDS.sleep(20);
+		} catch (final Exception e) {
+			LOGGER.info(e.getMessage());
+			return;
+		}
+
+		// if client did not answer for over 20 seconds
+		for (final UserModel user : users.values()) {
+			final long noMessageFor = java.lang.System.currentTimeMillis() - user.getTimeOfLastMessage();
+			// if user has not send a message for over 5 seconds, ping him/her
+			if (noMessageFor / 1000 > 20) {
+				disconnectUser(conns.get(user.getId()));
+			}
+		}
 	}
 
 	private void tick() {
@@ -221,6 +262,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		final UserModel user = new UserModel();
 		final long clientID = user.getId();
 		user.setState("connecting");
+		user.setTimeOfLastMessage(java.lang.System.currentTimeMillis());
 
 		synchronized (conns) {
 			conns.put(clientID, conn);
@@ -402,6 +444,10 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 				synchronized (users) {
 					user = users.get(id);
 				}
+				if (user == null) {
+					return;
+				}
+				user.setTimeOfLastMessage(java.lang.System.currentTimeMillis());
 
 				switch (event) {
 				case "receive_user_positions":
