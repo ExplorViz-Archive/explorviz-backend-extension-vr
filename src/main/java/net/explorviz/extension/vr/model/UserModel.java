@@ -10,6 +10,7 @@ public class UserModel extends BaseModel {
 	private final ControllerModel controller2;
 	private String state;
 	private final Color color;
+	private long timeOfLastMessage;
 
 	public Color getColor() {
 		return color;
@@ -62,6 +63,14 @@ public class UserModel extends BaseModel {
 
 	public ControllerModel getController2() {
 		return this.controller2;
+	}
+
+	public long getTimeOfLastMessage() {
+		return this.timeOfLastMessage;
+	}
+
+	public void setTimeOfLastMessage(final long time) {
+		this.timeOfLastMessage = time;
 	}
 
 }
