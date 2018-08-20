@@ -375,12 +375,12 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	private void updateLandscapePosition(final JSONObject JSONmessage) {
 		landscapePosChanged = true;
 
-		final JSONArray jsonPosition = JSONmessage.getJSONArray("deltaPosition");
-		final double[] deltaPosition = new double[jsonPosition.length()];
-		for (int p = 0; p < jsonPosition.length(); p++) {
-			deltaPosition[p] = jsonPosition.getFloat(p);
+		final JSONArray jsonOffset = JSONmessage.getJSONArray("offset");
+		final double[] offset = new double[jsonOffset.length()];
+		for (int p = 0; p < jsonOffset.length(); p++) {
+			offset[p] = jsonOffset.getFloat(p);
 		}
-		landscape.setDeltaPosition(deltaPosition);
+		landscape.setPosition(offset);
 
 		final JSONArray jsonQuaternion = JSONmessage.getJSONArray("quaternion");
 		final float[] quaternion = new float[jsonQuaternion.length()];
@@ -393,8 +393,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	/**
 	 * Sends a message (usually JSON as a string) to all connected users
 	 *
-	 * @param msg
-	 *            The message which all users should receive
+	 * @param msg The message which all users should receive
 	 */
 	public void broadcastAll(final JSONObject msg) {
 		synchronized (users) {
@@ -409,10 +408,8 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	/**
 	 * Sends a message (usually JSON as a string) to all but one connected users
 	 *
-	 * @param msg
-	 *            The message which all users should receive
-	 * @param userID
-	 *            The user that should be excluded from the message
+	 * @param msg    The message which all users should receive
+	 * @param userID The user that should be excluded from the message
 	 */
 	public void broadcastAllBut(final JSONObject msg, final long userID) {
 		synchronized (users) {
