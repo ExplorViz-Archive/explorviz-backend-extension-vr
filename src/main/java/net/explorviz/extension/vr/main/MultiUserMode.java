@@ -272,10 +272,11 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		LOGGER.info("New connection from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
 
 		// inform users about new user with ID
-		userConnecting(clientID);
+		userConnecting(user);
 	}
 
-	private void userConnecting(final long userID) {
+	private void userConnecting(final UserModel user) {
+		final long userID = user.getId();
 		// message other user about the new user
 		final JSONObject userConnectingMessage = new JSONObject();
 		userConnectingMessage.put("event", "receive_user_connecting");
@@ -286,6 +287,9 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 		selfConnectingMessage.put("id", userID);
 		selfConnectingMessage.put("event", "receive_self_connecting");
+		final Color color = user.getColor();
+		final JSONArray colorArray = new JSONArray(new int[] { color.getRed(), color.getGreen(), color.getBlue() });
+		selfConnectingMessage.put("color", colorArray);
 
 		enqueue(userID, selfConnectingMessage);
 
