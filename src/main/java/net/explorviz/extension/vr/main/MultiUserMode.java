@@ -34,20 +34,19 @@ import net.explorviz.model.landscape.System;
  */
 public class MultiUserMode extends WebSocketServer implements Runnable {
 
-	private Thread multiUserThread;
-	// private final ArrayList<SystemModel> systems = new ArrayList<>();
-	private static final int TCP_PORT = 4444;
-	private final HashMap<Long, WebSocket> conns;
-	private final HashMap<Long, UserModel> users;
-	private final BaseModel landscape;
-	private static boolean landscapePosChanged = false;
-	private final HashMap<Long, Boolean> systemState;
-	private final HashMap<Long, Boolean> nodeGroupState;
-	private final HashMap<Long, ApplicationModel> apps;
-	private static boolean running = true;
-	private final HashMap<Long, JSONArray> queues;
+	private Thread multiUserThread; // thread which e.g. sends messages to users
+	private static final int TCP_PORT = 4444; // port of websocket
+	private final HashMap<Long, WebSocket> conns; // maps userID to the corresponding socket connection
+	private final HashMap<Long, UserModel> users; // maps userID to the corresponding user model
+	private final BaseModel landscape; // only containing positional information about landscape
+	private static boolean landscapePosChanged = false; // tells whether a user already manipulated landscape
+	private final HashMap<Long, Boolean> systemState; // tells if a system (systemID) is opened/closed
+	private final HashMap<Long, Boolean> nodeGroupState; // tells if a nodegroup (nodegroupID) is opened/closed
+	private final HashMap<Long, ApplicationModel> apps; // maps applicationID to the application model
+	private static boolean running = true; // tells if multi-user mode is active
+	private final HashMap<Long, JSONArray> queues; // maps userID to corresponding message queue
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(MultiUserMode.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(MultiUserMode.class); // used for console logs
 
 	public void run2() {
 		init();
@@ -81,14 +80,13 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	}
 
 	private void init() {
-		// initializeLandscapeModel();
 	}
 
 	private void checkForDisconnects() {
 		for (final UserModel user : users.values()) {
-			final long noMessageFor = user.getTimeOfLastMessage() - java.lang.System.currentTimeMillis();
+			final long noMessageFor = (user.getTimeOfLastMessage() - java.lang.System.currentTimeMillis()) / 1000;
 			// if user has not send a message for over 5 seconds, ping him/her
-			if (true) {
+			if (noMessageFor >= 30) {
 				final JSONObject pingObj = new JSONObject();
 				pingObj.put("event", "receive_ping");
 				enqueue(user.getId(), pingObj);
@@ -106,7 +104,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		// if client did not answer for over 20 seconds
 		for (final UserModel user : users.values()) {
 			final long noMessageFor = java.lang.System.currentTimeMillis() - user.getTimeOfLastMessage();
-			// if user has not send a message for over 5 seconds, ping him/her
+			// if client has not send a message for over 20 seconds, disconnect him/her
 			if (noMessageFor / 1000 > 20) {
 				disconnectUser(conns.get(user.getId()));
 			}
@@ -121,9 +119,9 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 						final JSONArray queue = queues.get(userID);
 						if (queue.length() > 0) {
 							final WebSocket conn = conns.get(userID);
-							if (conn.isOpen()) {
+							try {
 								conn.send(queue.toString());
-							} else {
+							} catch (final Exception e) {
 								disconnectUser(conn);
 							}
 
@@ -449,7 +447,6 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 				switch (event) {
 				case "receive_user_positions":
-					// LOGGER.info("Positions from " + id + ": " + JSONmessage.toString());
 					JSONmessage.put("id", id);
 					broadcastAllBut(JSONmessage, id);
 					break;
@@ -460,27 +457,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					userConnected(id, name);
 					break;
 				case "receive_user_controllers":
-					if (JSONmessage.has("connect")) {
-						final JSONObject controllers = JSONmessage.getJSONObject("connect");
-						if (controllers.has("controller1")) {
-							user.getController1().setName(controllers.getString("controller1"));
-						}
-						if (controllers.has("controller2")) {
-							user.getController2().setName(controllers.getString("controller2"));
-						}
-					}
-					if (JSONmessage.has("disconnect")) {
-						final JSONArray controllers = JSONmessage.getJSONArray("disconnect");
-						for (int j = 0; j < controllers.length(); j++) {
-							if (controllers.get(j) == "controller1") {
-								user.getController1().setName(null);
-							}
-							if (controllers.get(j) == "controller2") {
-								user.getController2().setName(null);
-							}
-						}
-					}
-					JSONmessage.put("id", id);
+					onUserControllers(JSONmessage, user);
 					broadcastAllBut(JSONmessage, id);
 					break;
 				case "receive_disconnect_request":
@@ -497,7 +474,6 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 					// forward update from user to all other users
 					broadcastAllBut(JSONmessage, id);
-					// broadcastAllBut(JSONmessage, id);
 					break;
 				case "receive_nodegroup_update":
 					final Long nodeGroupID = JSONmessage.getLong("id");
@@ -551,6 +527,30 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 				}
 			}
 		}).start();
+	}
+
+	private void onUserControllers(final JSONObject JSONmessage, final UserModel user) {
+		if (JSONmessage.has("connect")) {
+			final JSONObject controllers = JSONmessage.getJSONObject("connect");
+			if (controllers.has("controller1")) {
+				user.getController1().setName(controllers.getString("controller1"));
+			}
+			if (controllers.has("controller2")) {
+				user.getController2().setName(controllers.getString("controller2"));
+			}
+		}
+		if (JSONmessage.has("disconnect")) {
+			final JSONArray controllers = JSONmessage.getJSONArray("disconnect");
+			for (int j = 0; j < controllers.length(); j++) {
+				if (controllers.get(j) == "controller1") {
+					user.getController1().setName(null);
+				}
+				if (controllers.get(j) == "controller2") {
+					user.getController2().setName(null);
+				}
+			}
+		}
+		JSONmessage.put("id", user.getId());
 	}
 
 	private void bindingApp(final JSONObject msg, final Long userID) {
