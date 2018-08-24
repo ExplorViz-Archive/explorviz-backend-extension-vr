@@ -84,28 +84,27 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	private void checkForDisconnects() {
 		for (final UserModel user : users.values()) {
-			final long noMessageFor = (user.getTimeOfLastMessage() - java.lang.System.currentTimeMillis()) / 1000;
-			// if user has not send a message for over 5 seconds, ping him/her
-			if (noMessageFor >= 30) {
+			final long noMessageFor = (java.lang.System.currentTimeMillis() - user.getTimeOfLastMessage()) / 1000;
+			// if user has not send a message for over 2 seconds, ping him/her
+			if (noMessageFor >= 2) {
 				final JSONObject pingObj = new JSONObject();
 				pingObj.put("event", "receive_ping");
 				enqueue(user.getId(), pingObj);
 			}
 		}
 
-		// wait 20 seconds to give client a chance to respond
+		// wait 15 seconds to give client a chance to respond
 		try {
-			TimeUnit.SECONDS.sleep(20);
+			TimeUnit.SECONDS.sleep(15);
 		} catch (final Exception e) {
 			LOGGER.info(e.getMessage());
 			return;
 		}
 
-		// if client did not answer for over 20 seconds
 		for (final UserModel user : users.values()) {
 			final long noMessageFor = java.lang.System.currentTimeMillis() - user.getTimeOfLastMessage();
-			// if client has not send a message for over 20 seconds, disconnect him/her
-			if (noMessageFor / 1000 > 20) {
+			// if client has not send a message for over 30 seconds, disconnect him/her
+			if (noMessageFor / 1000 > 30) {
 				disconnectUser(conns.get(user.getId()));
 			}
 		}
@@ -443,6 +442,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 				if (user == null) {
 					return;
 				}
+
 				user.setTimeOfLastMessage(java.lang.System.currentTimeMillis());
 
 				checkForBadConnection(JSONmessage, id);
