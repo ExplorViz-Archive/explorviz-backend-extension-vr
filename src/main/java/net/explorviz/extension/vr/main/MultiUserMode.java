@@ -52,7 +52,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		init();
 
 		final int fps = 90; // number of update per second.
-		final double tickPerSecond = 1000000000 / fps;
+		final double ticksPerSecond = 1000000000 / fps;
 		double delta = 0;
 		long now;
 		long lastTime = java.lang.System.nanoTime();
@@ -60,7 +60,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 		while (running) {
 			now = java.lang.System.nanoTime();
-			delta += (now - lastTime) / tickPerSecond;
+			delta += (now - lastTime) / ticksPerSecond;
 			lastTime = now;
 
 			if (delta >= 1) {
@@ -391,8 +391,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	/**
 	 * Sends a message (usually JSON as a string) to all connected users
 	 *
-	 * @param msg
-	 *            The message which all users should receive
+	 * @param msg The message which all users should receive
 	 */
 	public void broadcastAll(final JSONObject msg) {
 		synchronized (users) {
@@ -407,10 +406,8 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	/**
 	 * Sends a message (usually JSON as a string) to all but one connected users
 	 *
-	 * @param msg
-	 *            The message which all users should receive
-	 * @param userID
-	 *            The user that should be excluded from the message
+	 * @param msg    The message which all users should receive
+	 * @param userID The user that should be excluded from the message
 	 */
 	public void broadcastAllBut(final JSONObject msg, final long userID) {
 		synchronized (users) {
@@ -447,6 +444,8 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					return;
 				}
 				user.setTimeOfLastMessage(java.lang.System.currentTimeMillis());
+
+				checkForBadConnection(JSONmessage, id);
 
 				switch (event) {
 				case "receive_user_positions":
@@ -530,6 +529,22 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 				}
 			}
 		}).start();
+	}
+
+	private void checkForBadConnection(final JSONObject JSONmessage, final long userID) {
+		if (!JSONmessage.has("time")) {
+			return;
+		}
+
+		final long currentTime = java.lang.System.currentTimeMillis();
+		final long messageTime = JSONmessage.getLong("time");
+
+		// if message is delayed more than 2 seconds, active low bandwidth mode for user
+		if (currentTime - messageTime > 2000) {
+			final JSONObject badConnectionMsg = new JSONObject();
+			badConnectionMsg.put("event", "receive_bad_connection");
+			enqueue(userID, badConnectionMsg);
+		}
 	}
 
 	private void onUserControllers(final JSONObject JSONmessage, final UserModel user) {
