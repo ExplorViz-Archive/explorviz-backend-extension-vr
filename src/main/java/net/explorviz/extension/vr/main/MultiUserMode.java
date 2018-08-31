@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import net.explorviz.api.ExtensionAPIImpl;
 import net.explorviz.extension.vr.model.ApplicationModel;
 import net.explorviz.extension.vr.model.BaseModel;
+import net.explorviz.extension.vr.model.HighlightingModel;
 import net.explorviz.extension.vr.model.UserModel;
 import net.explorviz.extension.vr.model.UserModel.State;
 import net.explorviz.model.landscape.Landscape;
@@ -232,6 +233,23 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		enqueue(userID, landscapeObj);
 	}
 
+	private void sendHighlighting(final long userID) {
+		for (final UserModel user : users.values()) {
+			if (user.hasHighlightedEntity()) {
+				final HighlightingModel highlighted = user.getHighlightedEntity();
+				final JSONObject highlightingObj = new JSONObject();
+				highlightingObj.put("event", "receive_hightlight_update");
+				highlightingObj.put("time", java.lang.System.currentTimeMillis());
+				highlightingObj.put("userID", user.getId());
+				highlightingObj.put("appID", highlighted.getHighlightedApp());
+				highlightingObj.put("entityID", highlighted.getHighlightedEntity());
+				highlightingObj.put("isHighlighted", true);
+				highlightingObj.put("color", highlighted.getOriginalColor());
+				enqueue(userID, highlightingObj);
+			}
+		}
+	}
+
 	private void enqueue(final long userID, final JSONObject message) {
 		synchronized (queues) {
 			if (!queues.containsKey(userID)) {
@@ -339,6 +357,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 		// send current state of landscape to new user
 		sendLandscape(userID);
+		sendHighlighting(userID);
 
 		user.setState(State.CONNECTED);
 	}
@@ -520,6 +539,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					break;
 				case "receive_hightlight_update":
 					LOGGER.info(JSONmessage.toString());
+					updateHighlighting(JSONmessage, id);
 					broadcastAllBut(JSONmessage, id);
 					break;
 				case "receive_spectating_update":
@@ -533,6 +553,27 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 				}
 			}
 		}).start();
+	}
+
+	private void updateHighlighting(final JSONObject msg, final long userID) {
+		final UserModel user = users.get(userID);
+		final boolean isHighlighted = msg.getBoolean("isHighlighted");
+		if (!isHighlighted) {
+			user.setHighlighted(false);
+			return;
+		}
+		final String appID = msg.getString("appID");
+		final String entityID = msg.getString("entityID");
+		final long originalColor = msg.getLong("color");
+
+		// overwrite highlighting of other users (if they highighted same entity)
+		for (final UserModel otherUser : users.values()) {
+			if (otherUser.hasHighlightedEntity() && otherUser.getHighlightedEntity().getHighlightedApp().equals(appID)
+					&& otherUser.getHighlightedEntity().getHighlightedEntity().equals(entityID)) {
+				otherUser.setHighlighted(false);
+			}
+		}
+		user.setHighlightedEntity(isHighlighted, appID, entityID, originalColor);
 	}
 
 	private void checkForBadConnection(final JSONObject JSONmessage, final long userID) {

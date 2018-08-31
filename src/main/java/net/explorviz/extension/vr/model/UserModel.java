@@ -20,6 +20,8 @@ public class UserModel extends BaseModel {
 			new Color(241, 141, 0), // orange
 	};
 	private static byte[] assignedColors = new byte[colors.length];
+	private boolean hasHighlightedEntity;
+	private HighlightingModel highlightedEntity;
 
 	public enum State {
 		CONNECTING, CONNECTED, SPECTATING
@@ -98,6 +100,24 @@ public class UserModel extends BaseModel {
 
 	public void setTimeOfLastMessage(final long time) {
 		this.timeOfLastMessage = time;
+	}
+
+	public boolean hasHighlightedEntity() {
+		return hasHighlightedEntity;
+	}
+
+	public void setHighlighted(final boolean isHighlighted) {
+		this.hasHighlightedEntity = isHighlighted;
+	}
+
+	public void setHighlightedEntity(final boolean isHighlighted, final String appID, final String entityID,
+			final long originalColor) {
+		this.hasHighlightedEntity = isHighlighted;
+		highlightedEntity = new HighlightingModel(isHighlighted, appID, entityID, originalColor);
+	}
+
+	public HighlightingModel getHighlightedEntity() {
+		return this.highlightedEntity;
 	}
 
 }
