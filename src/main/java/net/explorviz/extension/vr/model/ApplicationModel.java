@@ -6,7 +6,7 @@ public class ApplicationModel extends BaseModel {
 
 	boolean isOpen;
 	boolean isBound;
-	Long boundByUser;
+	long boundByUser;
 
 	private final ArrayList<Long> openComponents;
 
@@ -42,17 +42,17 @@ public class ApplicationModel extends BaseModel {
 		return isBound;
 	}
 
-	public void setBoundByUser(final Long userID) {
+	public void setBoundByUser(final long userID) {
 		this.boundByUser = userID;
 	}
 
-	public void setUnboundByUser(final Long userID) {
+	public void setUnboundByUser(final long userID) {
 		if (isBoundByUser(userID)) {
 			setBound(false);
 		}
 	}
 
-	public boolean isBoundByUser(final Long userID) {
+	public boolean isBoundByUser(final long userID) {
 		if (isBound && userID == boundByUser) {
 			return true;
 		} else {
