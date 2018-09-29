@@ -5,7 +5,6 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.java_websocket.WebSocket;
@@ -57,7 +56,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		double delta = 0;
 		long now;
 		long lastTime = java.lang.System.nanoTime();
-		long checkedDisconnectTime = java.lang.System.nanoTime();
+		final long checkedDisconnectTime = java.lang.System.nanoTime();
 
 		while (running) {
 			now = java.lang.System.nanoTime();
@@ -69,14 +68,13 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 				delta--;
 			}
 
-			// check if all users are still connected regulary
-			if ((now - checkedDisconnectTime) / 1000 >= 30000000) {
-				checkedDisconnectTime = now;
-				CompletableFuture.runAsync(() -> {
-					checkForDisconnects();
-				});
-
-			}
+			// check if all users are still connected regularly
+			/*
+			 * if ((now - checkedDisconnectTime) / 1000 >= 30000000) { checkedDisconnectTime
+			 * = now; CompletableFuture.runAsync(() -> { checkForDisconnects(); });
+			 *
+			 * }
+			 */
 		}
 	}
 
@@ -413,7 +411,8 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	/**
 	 * Sends a message (usually JSON as a string) to all connected users
 	 *
-	 * @param msg The message which all users should receive
+	 * @param msg
+	 *            The message which all users should receive
 	 */
 	public void broadcastAll(final JSONObject msg) {
 		synchronized (users) {
@@ -428,8 +427,10 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	/**
 	 * Sends a message (usually JSON as a string) to all but one connected users
 	 *
-	 * @param msg    The message which all users should receive
-	 * @param userID The user that should be excluded from the message
+	 * @param msg
+	 *            The message which all users should receive
+	 * @param userID
+	 *            The user that should be excluded from the message
 	 */
 	public void broadcastAllBut(final JSONObject msg, final long userID) {
 		synchronized (users) {
@@ -450,7 +451,6 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 	@Override
 	public void onMessage(final WebSocket conn, final String message) {
-		// LOGGER.info("Message from client: " + message);
 		new Thread(() -> {
 			final JSONArray queue = new JSONArray(message);
 			for (int i = 0; i < queue.length(); i++) {
@@ -476,7 +476,6 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					broadcastAllBut(JSONmessage, id);
 					break;
 				case "receive_connect_request":
-					LOGGER.info(JSONmessage.toString());
 					final String name = JSONmessage.getString("name");
 					user.setUserName(name);
 					userConnected(id, name);
@@ -509,12 +508,10 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					broadcastAllBut(JSONmessage, id);
 					break;
 				case "receive_app_opened":
-					LOGGER.info(JSONmessage.toString());
 					updateOpenApp(JSONmessage);
 					broadcastAllBut(JSONmessage, id);
 					break;
 				case "receive_app_closed":
-					LOGGER.info(JSONmessage.toString());
 					final Long applicationID = JSONmessage.getLong("id");
 					apps.remove(applicationID);
 					broadcastAllBut(JSONmessage, id);
@@ -523,13 +520,11 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					bindingApp(JSONmessage, id);
 					break;
 				case "receive_app_released":
-					LOGGER.info(JSONmessage.toString());
 					updateOpenApp(JSONmessage);
 					apps.get(JSONmessage.getLong("id")).setBound(false);
 					broadcastAllBut(JSONmessage, id);
 					break;
 				case "receive_component_update":
-					LOGGER.info(JSONmessage.toString());
 					if (JSONmessage.getBoolean("isOpened")) {
 						apps.get(JSONmessage.getLong("appID")).openComponent(JSONmessage.getLong("componentID"));
 					} else {
@@ -538,12 +533,10 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					broadcastAllBut(JSONmessage, id);
 					break;
 				case "receive_hightlight_update":
-					LOGGER.info(JSONmessage.toString());
 					updateHighlighting(JSONmessage, id);
 					broadcastAllBut(JSONmessage, id);
 					break;
 				case "receive_spectating_update":
-					LOGGER.info(JSONmessage.toString());
 					if (JSONmessage.getBoolean("isSpectating"))
 						users.get(id).setState(State.SPECTATING);
 					else
@@ -617,7 +610,6 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 	}
 
 	private void bindingApp(final JSONObject msg, final Long userID) {
-		LOGGER.info(msg.toString());
 		msg.put("userID", userID);
 		final Long appID = msg.getLong("appID");
 		final boolean isBound = apps.get(appID).isBound();
