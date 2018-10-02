@@ -30,6 +30,10 @@ public class ApplicationModel extends BaseModel {
 		openComponents.remove(id);
 	}
 
+	public void closeAllComponents() {
+		openComponents.clear();
+	}
+
 	public ArrayList<Long> getOpenComponents() {
 		return openComponents;
 	}
