@@ -1,8 +1,6 @@
 rootProject.name = 'explorviz-backend-extension-vr'
 
-// local linking (explorviz backend project)
-//include ':explorviz-backend'
-//project(':explorviz-backend').projectDir = file('../explorviz-backend')
-
-//include ':explorviz-backend-kiekeradapter'
-//project(':explorviz-backend-kiekeradapter').projectDir = file('../explorviz-backend/explorviz-backend-kiekeradapter')
+// Local linking of external project
+// See "dependencies" in build.gradle on 
+//include ':common-concerns'
+//project(':common-concerns').projectDir = new File("../explorviz-backend-shared/common-concerns")

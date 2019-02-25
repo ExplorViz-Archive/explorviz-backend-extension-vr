@@ -1,20 +1,9 @@
-apply plugin: 'java-library'
-apply plugin: 'org.akhikhl.gretty'
-apply plugin: 'war'
-apply plugin: 'pmd'
-apply plugin: 'checkstyle'
-apply plugin: 'findbugs'
-
-
-buildscript {
-    repositories {
-    jcenter()
-    }
-    dependencies {
-        classpath 'org.akhikhl.gretty:gretty:+'
-    }
+plugins {
+    id 'java'
+    id 'application'
 }
 
+apply from: 'https://raw.githubusercontent.com/ExplorViz/gradle-script-plugins/master/microservice.gradle'
 
 repositories {
   jcenter()
@@ -27,116 +16,30 @@ repositories {
 
 
 // # Uncomment lines below to force dependency downloading (e.g. when explorviz-backend was updated)
-//configurations.all {
-//    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-//}
-
-
-configurations {
-	provided
-	compile.extendsFrom(provided)
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
-
 dependencies {
-  	// Core logic
-  	compile 'com.github.ExplorViz:explorviz-backend:master-SNAPSHOT'
+  	// ExplorViz config injection
+  	implementation 'com.github.explorviz.explorviz-backend-shared:config-injection:master-SNAPSHOT'
+  	
+  	// ExplorViz common exception handling
+  	implementation 'com.github.explorviz.explorviz-backend-shared:exception-handling:master-SNAPSHOT'
+  	
+  	implementation 'com.github.explorviz.explorviz-backend-shared:common-concerns:master-SNAPSHOT'
+  	
+  	implementation 'com.github.explorviz.explorviz-backend-shared:security:master-SNAPSHOT'
+  	
+  	implementation 'com.github.explorviz.explorviz-backend-shared:landscape-model:master-SNAPSHOT'
   	
   	//Java Websocket
   	compile 'org.java-websocket:Java-WebSocket:1.3.8'
   	
   	//JSON
   	compile 'org.json:json:20180130'
-	
-	// local linking (explorviz backend project)
-	//compile project(':explorviz-backend')
-	//compile project(':explorviz-backend-kiekeradapter')
-  
- 	// Dependency for this subproject. Add your dependencies in the same way.
-  	provided group: 'de.sven-jacobs', name: 'loremipsum', version: '1.0'
 
-    testCompile 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.12'
 }
 
-
-// Don't build war when tests fail
-war.dependsOn check
-
-
-// War plugin typically disables jar build
-assemble.dependsOn jar
-
-// Build .jar file with your "provided" dependencies only
-jar {
-  baseName = project.name 
-  from configurations.provided.asFileTree.files.collect { zipTree(it) }
-}
-
-
-// Tooling
-pmd {
-	ignoreFailures = false
-	// Clear the rule set first. Otherwise we would have a lot of additional rules in our rule set.
-	ruleSets = []
-	ruleSetFiles = files("conf/pmd.xml")
-}
-
-    
-checkstyle {
-	ignoreFailures = false
-	showViolations = false
-	configFile = file("conf/checkstyle.xml")
-}
-
-findbugs {
-	reportLevel = "low"
-	ignoreFailures = false
-	effort = "max"
-}
-
-
-// Renaming Dummy task
-// Run with ./gradlew renameProject -PextensionName="X"
-task renameProject(type: Copy) {
-  if (project.hasProperty('extensionName')) {
-
-    // relative copy destinationDir
-    into "."
-
-    // Rename dummy package and replace dummy string import declarations
-
-    def newExtensionName = project.property('extensionName')
-    def javaSrc = 'src/main/java/net/explorviz/extension/'
-
-    from(javaSrc + 'dummy') {
-      filter{ it.replaceAll("\\.dummy\\.", "\\." + newExtensionName + "\\.")}
-      into javaSrc + newExtensionName
-    }    
-
-    // Replace dummy string in settings.gradle
-    String file = new File("settings.gradle").getText("UTF-8")
-    file = file.replaceAll("-dummy", "-" + newExtensionName)
-    new File("settings.gradle").write(file, "UTF-8")
-
-    // Replace dummy string in .project
-    file = new File(".project").getText("UTF-8")
-    file = file.replaceAll("-dummy", "-" + newExtensionName)
-    new File(".project").write(file, "UTF-8")
-
-    doLast {
-      delete javaSrc + 'dummy'
-    }
-  }
-}
-
-
-// Embedded Webserver
-gretty {
-  httpPort = 8081
-  servletContainer = 'jetty9'
-  contextPath = '/'
-  recompileOnSourceChange = false
-  reloadOnClassChange = false
-  reloadOnConfigChange = false
-  reloadOnLibChange = false
-}
+mainClassName = 'net.explorviz.extension.vr.main.MultiUserMode'
