@@ -20,21 +20,27 @@ configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
+ext {
+  // Version tag for the Explorviz-Backend-Shared project dependency
+  // https://github.com/ExplorViz/explorviz-backend-shared
+  explorvizSharedVersion = 'v1.3.3'
+}
+
 dependencies {
   	// ExplorViz config injection
-  	implementation 'com.github.explorviz.explorviz-backend-shared:config-injection:master-SNAPSHOT'
+  	implementation "com.github.explorviz.explorviz-backend-shared:config-injection:${explorvizSharedVersion}"
   	
   	// ExplorViz common exception handling
-  	implementation 'com.github.explorviz.explorviz-backend-shared:exception-handling:master-SNAPSHOT'
+  	implementation "com.github.explorviz.explorviz-backend-shared:exception-handling:${explorvizSharedVersion}"
   	
-  	implementation 'com.github.explorviz.explorviz-backend-shared:common-concerns:master-SNAPSHOT'
+  	implementation "com.github.explorviz.explorviz-backend-shared:common-concerns:${explorvizSharedVersion}"
   	
-  	implementation 'com.github.explorviz.explorviz-backend-shared:security:master-SNAPSHOT'
+  	implementation "com.github.explorviz.explorviz-backend-shared:security:${explorvizSharedVersion}"
   	
-  	implementation 'com.github.explorviz.explorviz-backend-shared:landscape-model:master-SNAPSHOT'
+  	implementation "com.github.explorviz.explorviz-backend-shared:landscape-model:${explorvizSharedVersion}"
   	
   	//Java Websocket
-  	compile 'org.java-websocket:Java-WebSocket:1.3.8'
+  	compile 'org.java-websocket:Java-WebSocket:1.4.0'
   	
   	//JSON
   	compile 'org.json:json:20180130'

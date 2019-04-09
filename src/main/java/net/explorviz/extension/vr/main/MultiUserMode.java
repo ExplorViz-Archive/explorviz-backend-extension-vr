@@ -4,12 +4,12 @@ import java.awt.Color;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import net.explorviz.extension.vr.model.ApplicationModel;
 import net.explorviz.extension.vr.model.BaseModel;
 import net.explorviz.extension.vr.model.HighlightingModel;
 import net.explorviz.extension.vr.model.UserModel;
 import net.explorviz.extension.vr.model.UserModel.State;
+import net.explorviz.shared.config.helper.PropertyHelper;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
@@ -27,7 +27,9 @@ import org.slf4j.LoggerFactory;
 public class MultiUserMode extends WebSocketServer implements Runnable {
 
   private Thread multiUserThread; // thread which e.g. sends messages to users
-  private static final int TCP_PORT = 4444; // port of websocket
+
+  private static int DEFAULT_PORT = 4444; // default port of websocket
+
   private final HashMap<Long, WebSocket> conns; // maps userID to the corresponding socket
                                                 // connection
   private final HashMap<Long, UserModel> users; // maps userID to the corresponding user model
@@ -44,6 +46,19 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
   private static final Logger LOGGER = LoggerFactory.getLogger(MultiUserMode.class); // used for
                                                                                      // console logs
 
+  private static int getTCPPort() {
+    try {
+      return PropertyHelper.getIntegerProperty("vr.port");
+    } catch (final NumberFormatException e) {
+      if (LOGGER.isInfoEnabled()) {
+        LOGGER.info(
+            "ATTENTION: Using default port " + DEFAULT_PORT + ". Check explorviz.properties file.",
+            e);
+      }
+    }
+    return DEFAULT_PORT;
+  }
+
   public void run2() {
     init();
 
@@ -52,7 +67,6 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
     double delta = 0;
     long now;
     long lastTime = java.lang.System.nanoTime();
-    final long checkedDisconnectTime = java.lang.System.nanoTime();
 
     while (running) {
       now = java.lang.System.nanoTime();
@@ -63,14 +77,6 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
         tick();
         delta--;
       }
-
-      // check if all users are still connected regularly
-      /*
-       * if ((now - checkedDisconnectTime) / 1000 >= 30000000) { checkedDisconnectTime = now;
-       * CompletableFuture.runAsync(() -> { checkForDisconnects(); });
-       *
-       * }
-       */
     }
   }
 
@@ -80,35 +86,6 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
   }
 
   private void init() {}
-
-  private void checkForDisconnects() {
-    for (final UserModel user : users.values()) {
-      final long noMessageFor =
-          (java.lang.System.currentTimeMillis() - user.getTimeOfLastMessage()) / 1000;
-      // if user has not send a message for over 2 seconds, ping him/her
-      if (noMessageFor >= 2) {
-        final JSONObject pingObj = new JSONObject();
-        pingObj.put("event", "receive_ping");
-        enqueue(user.getId(), pingObj);
-      }
-    }
-
-    // wait 15 seconds to give client a chance to respond
-    try {
-      TimeUnit.SECONDS.sleep(15);
-    } catch (final Exception e) {
-      LOGGER.info(e.getMessage());
-      return;
-    }
-
-    for (final UserModel user : users.values()) {
-      final long noMessageFor = java.lang.System.currentTimeMillis() - user.getTimeOfLastMessage();
-      // if client has not send a message for over 30 seconds, disconnect him/her
-      if (noMessageFor / 1000 > 30) {
-        disconnectUser(conns.get(user.getId()));
-      }
-    }
-  }
 
   private void tick() {
     synchronized (queues) {
@@ -145,7 +122,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
   }
 
   MultiUserMode() {
-    super(new InetSocketAddress(TCP_PORT));
+    super(new InetSocketAddress(getTCPPort()));
     conns = new HashMap<>();
     users = new HashMap<>();
     queues = new HashMap<>();
