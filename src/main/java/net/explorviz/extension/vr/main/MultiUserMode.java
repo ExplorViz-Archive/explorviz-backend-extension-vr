@@ -445,8 +445,6 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
         user.setTimeOfLastMessage(java.lang.System.currentTimeMillis());
 
-        checkForBadConnection(JSONmessage, id);
-
         switch (event) {
           case "receive_user_positions":
             JSONmessage.put("id", id);
@@ -482,6 +480,9 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
             nodeGroupState.put(nodeGroupID, nodeGroupOpened);
 
             // forward update from user to all other users
+            broadcastAllBut(JSONmessage, id);
+            break;
+          case "receive_app_position":
             broadcastAllBut(JSONmessage, id);
             break;
           case "receive_app_opened":
@@ -550,22 +551,6 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
       }
     }
     user.setHighlightedEntity(isHighlighted, appID, entityID, originalColor);
-  }
-
-  private void checkForBadConnection(final JSONObject JSONmessage, final long userID) {
-    if (!JSONmessage.has("time")) {
-      return;
-    }
-
-    final long currentTime = java.lang.System.currentTimeMillis();
-    final long messageTime = JSONmessage.getLong("time");
-
-    // if message is delayed more than 2 seconds, active low bandwidth mode for user
-    if (currentTime - messageTime > 2000) {
-      final JSONObject badConnectionMsg = new JSONObject();
-      badConnectionMsg.put("event", "receive_bad_connection");
-      enqueue(userID, badConnectionMsg);
-    }
   }
 
   private void onUserControllers(final JSONObject JSONmessage, final UserModel user) {
