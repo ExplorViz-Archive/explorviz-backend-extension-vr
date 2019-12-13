@@ -1,6 +1,8 @@
 plugins {
     id 'java'
     id 'application'
+    id 'maven'
+    id 'com.github.johnrengelman.shadow' version '5.1.0'
 }
 
 apply from: 'https://raw.githubusercontent.com/ExplorViz/gradle-script-plugins/master/microservice.gradle'
@@ -14,38 +16,52 @@ repositories {
   mavenCentral()
 }
 
+ext {
+  // Version of the remote shared project to use.
+  // https://github.com/ExplorViz/explorviz-backend-shared
+  sharedProjectVersion='v1.4.0.10-SNAPSHOT'
+}
 
 // # Uncomment lines below to force dependency downloading (e.g. when explorviz-backend was updated)
 configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
-ext {
-  // Version tag for the Explorviz-Backend-Shared project dependency
-  // https://github.com/ExplorViz/explorviz-backend-shared
-  explorvizSharedVersion = 'v1.3.3'
-}
-
-dependencies {
-  	// ExplorViz config injection
-  	implementation "com.github.explorviz.explorviz-backend-shared:config-injection:${explorvizSharedVersion}"
+dependencies {  	
+  	// ExplorViz Shared Dependencies
+  	implementation group: 'net.explorviz', name: 'config-injection', version: "${sharedProjectVersion}"
+  	implementation group: 'net.explorviz', name: 'security', version: "${sharedProjectVersion}"
+  	implementation group: 'net.explorviz', name: 'exception-handling', version: "${sharedProjectVersion}"
+  	implementation group: 'net.explorviz', name: 'common-concerns', version: "${sharedProjectVersion}"
+  	implementation group: 'net.explorviz', name: 'query', version: "${sharedProjectVersion}"
+  	implementation group: 'net.explorviz', name: 'landscape-model', version: "dev-1-SNAPSHOT"
   	
-  	// ExplorViz common exception handling
-  	implementation "com.github.explorviz.explorviz-backend-shared:exception-handling:${explorvizSharedVersion}"
-  	
-  	implementation "com.github.explorviz.explorviz-backend-shared:common-concerns:${explorvizSharedVersion}"
-  	
-  	implementation "com.github.explorviz.explorviz-backend-shared:security:${explorvizSharedVersion}"
-  	
-  	implementation "com.github.explorviz.explorviz-backend-shared:landscape-model:${explorvizSharedVersion}"
-  	
-  	//Java Websocket
+  	// Java Websocket
   	compile 'org.java-websocket:Java-WebSocket:1.4.0'
   	
-  	//JSON
+  	// JSON
   	compile 'org.json:json:20180130'
 
+	// JUnit
     testImplementation 'junit:junit:4.12'
 }
 
-mainClassName = 'net.explorviz.extension.vr.main.MultiUserMode'
+assemble.dependsOn shadowJar
+jar.enabled = false
+
+jar {
+  manifest {
+    attributes(
+      'Main-Class': 'net.explorviz.extension.vr.main.MultiUserMode'
+    )
+  }
+}
+
+shadowJar {
+  baseName = "explorviz-${project.name}"
+  classifier = null
+}
+
+application {
+    mainClassName = 'net.explorviz.extension.vr.main.MultiUserMode'
+}
