@@ -1,8 +1,1 @@
 rootProject.name = 'explorviz-backend-extension-vr'
-
-// local linking (explorviz backend project)
-//include ':explorviz-backend'
-//project(':explorviz-backend').projectDir = file('../explorviz-backend')
-
-//include ':explorviz-backend-kiekeradapter'
-//project(':explorviz-backend-kiekeradapter').projectDir = file('../explorviz-backend/explorviz-backend-kiekeradapter')
