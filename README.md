@@ -14,8 +14,8 @@ The related frontend extension is [explorviz-frontend-extension-vr](https://gith
 - [ExplorViz Frontend-VR-extension](https://github.com/ExplorViz/explorviz-frontend-extension-vr)
 
 ## Installation
-1. Follow the [Eclipse Setup](https://github.com/ExplorViz/explorviz-backend#eclipse-setup) of the [ExplorViz Backend](https://github.com/ExplorViz/explorviz-backend)
+1. Follow the [README](https://github.com/ExplorViz/explorviz-backend) of the [ExplorViz Backend](https://github.com/ExplorViz/explorviz-backend)
 2. Clone this repository
 3. Import project into eclipse: via `Import -> Gradle -> Existing Gradle project -> path/to/explorviz-backend-extension-vr`
-4. Start **explorviz-backend-extension-vr** via Eclipse Tab: `Gradle Tasks -> explorviz-backend-extension-vr -> gretty -> appStart`
+4. Start **explorviz-backend-extension-vr** via Eclipse Tab: `Gradle Tasks -> explorviz-backend-extension-vr -> application -> run`
 5. Setup and start [explorviz-frontend](https://github.com/ExplorViz/explorviz-frontend) with the installed [explorviz-frontend-extension-vr](https://github.com/ExplorViz/explorviz-frontend-extension-vr)
