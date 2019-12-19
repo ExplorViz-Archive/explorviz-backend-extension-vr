@@ -4,10 +4,10 @@ public class HighlightingModel {
 
 	private final String highlightedApp;
 	private final String highlightedEntity;
-	private final long originalColor;
+	private final String originalColor;
 
 	public HighlightingModel(final boolean isHighlighted, final String appID, final String entityID,
-			final long originalColor) {
+			final String originalColor) {
 		this.highlightedApp = appID;
 		this.highlightedEntity = entityID;
 		this.originalColor = originalColor;
@@ -21,7 +21,7 @@ public class HighlightingModel {
 		return highlightedEntity;
 	}
 
-	public long getOriginalColor() {
+	public String getOriginalColor() {
 		return originalColor;
 	}
 

@@ -20,17 +20,17 @@ public class BaseModel {
 	private float xQuat, yQuat, zQuat, wQuat;
 
 	@Id(LongIdHandler.class)
-	private Long id;
+	private String id;
 
 	public BaseModel() {
-		id = ID_GENERATOR.incrementAndGet();
+		id = String.valueOf(ID_GENERATOR.incrementAndGet());
 	}
 
-	public long getId() {
+	public String getId() {
 		return id;
 	}
 
-	public void setId(final long id) {
+	public void setId(final String id) {
 		this.id = id;
 	}
 

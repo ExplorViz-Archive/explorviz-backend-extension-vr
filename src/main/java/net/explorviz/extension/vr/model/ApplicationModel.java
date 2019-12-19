@@ -6,9 +6,9 @@ public class ApplicationModel extends BaseModel {
 
 	boolean isOpen;
 	boolean isBound;
-	long boundByUser;
+	String boundByUser;
 
-	private final ArrayList<Long> openComponents;
+	private final ArrayList<String> openComponents;
 
 	public ApplicationModel() {
 		openComponents = new ArrayList<>();
@@ -22,11 +22,11 @@ public class ApplicationModel extends BaseModel {
 		this.isOpen = isOpen;
 	}
 
-	public void openComponent(final Long id) {
+	public void openComponent(final String id) {
 		openComponents.add(id);
 	}
 
-	public void closeComponent(final Long id) {
+	public void closeComponent(final String id) {
 		openComponents.remove(id);
 	}
 
@@ -34,7 +34,7 @@ public class ApplicationModel extends BaseModel {
 		openComponents.clear();
 	}
 
-	public ArrayList<Long> getOpenComponents() {
+	public ArrayList<String> getOpenComponents() {
 		return openComponents;
 	}
 
@@ -46,17 +46,17 @@ public class ApplicationModel extends BaseModel {
 		return isBound;
 	}
 
-	public void setBoundByUser(final long userID) {
+	public void setBoundByUser(final String userID) {
 		this.boundByUser = userID;
 	}
 
-	public void setUnboundByUser(final long userID) {
+	public void setUnboundByUser(final String userID) {
 		if (isBoundByUser(userID)) {
 			setBound(false);
 		}
 	}
 
-	public boolean isBoundByUser(final long userID) {
+	public boolean isBoundByUser(final String userID) {
 		if (isBound && userID == boundByUser) {
 			return true;
 		} else {
