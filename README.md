@@ -10,7 +10,7 @@ The related frontend extension is [explorviz-frontend-extension-vr](https://gith
 - A powerful computer that can handle VR
 - [Mozilla Firefox](https://www.mozilla.org/) Version 72.0.2
 - [ExplorViz Backend](https://github.com/ExplorViz/explorviz-backend) Version 1.5.0
-- [ExplorViz Frontend](https://github.com/ExplorViz/explorviz-frontend) Version 2.5.0
+- [ExplorViz Frontend](https://github.com/ExplorViz/explorviz-frontend) Version 1.5.0
 - [ExplorViz Frontend-VR-extension](https://github.com/ExplorViz/explorviz-frontend-extension-vr)
 
 ## Installation
