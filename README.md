@@ -2,14 +2,14 @@
 # ExplorViz-Backend-Extension-VR
 
 This extension adds features to the backend of ExplorViz to enable a multi-user VR-experience. 
-The related frontend extension can be found [here](https://github.com/ExplorViz/explorviz-frontend-extension-vr).
+The related frontend extension can be found [here](https://github.com/ExplorViz/explorviz-frontend-extension-vr/blob/2.0).
 
 ## Requirements
 - [HTC Vive (Pro)](https://www.vive.com) or [Oculus Rift CV1](https://www.oculus.com/rift/) (basically [Oculus Rift S](https://www.oculus.com/rift-s/) is also supported) with controllers and their respective firmware
 - A powerful computer that can handle VR
 - [Mozilla Firefox](https://www.mozilla.org/) Version 72.0.2
 - [ExplorViz Backend](https://github.com/ExplorViz/explorviz-backend/tree/1.5.0) Version 1.5.0
-- [ExplorViz Backend Extension VR](https://github.com/ExplorViz/explorviz-backend-extension-vr)
+- [ExplorViz Backend Extension VR] 2.0(https://github.com/ExplorViz/explorviz-backend-extension-vr/blob/2.0)
 - [ExplorViz Frontend](https://github.com/ExplorViz/explorviz-frontend/tree/1.5.0) Version 1.5.0
 
 ## Installation
