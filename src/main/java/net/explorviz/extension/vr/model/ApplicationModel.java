@@ -5,8 +5,8 @@ import java.util.ArrayList;
 public class ApplicationModel extends BaseModel {
 
 	boolean isOpen;
-	boolean isBound;
-	String boundByUser;
+	boolean isGrabbed;
+	String grabbedByUser;
 
 	private final ArrayList<String> openComponents;
 
@@ -38,26 +38,26 @@ public class ApplicationModel extends BaseModel {
 		return openComponents;
 	}
 
-	public void setBound(final boolean isBound) {
-		this.isBound = isBound;
+	public void setGrabbed(final boolean isGrabbed) {
+		this.isGrabbed = isGrabbed;
 	}
 
-	public boolean isBound() {
-		return isBound;
+	public boolean isGrabbed() {
+		return isGrabbed;
 	}
 
-	public void setBoundByUser(final String userID) {
-		this.boundByUser = userID;
+	public void setGrabbedByUser(final String userID) {
+		this.grabbedByUser = userID;
 	}
 
 	public void setUnboundByUser(final String userID) {
-		if (isBoundByUser(userID)) {
-			setBound(false);
+		if (this.isGrabbedByUser(userID)) {
+			this.setGrabbed(false);
 		}
 	}
 
-	public boolean isBoundByUser(final String userID) {
-		if (isBound && userID == boundByUser) {
+	public boolean isGrabbedByUser(final String userID) {
+		if (this.isGrabbed && userID == this.grabbedByUser) {
 			return true;
 		} else {
 			return false;

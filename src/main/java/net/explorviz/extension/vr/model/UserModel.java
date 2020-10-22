@@ -11,7 +11,7 @@ public class UserModel extends BaseModel {
 	private long timeOfLastMessage;
 	private byte color = -1;
 	private static final Color[] colors = { new Color(255, 0, 0), // red
-			new Color(0, 117, 242), // blue
+			new Color(0, 0, 255), // blue
 			new Color(219, 208, 0), // yellow
 			new Color(0, 209, 188), // turquoise
 			new Color(209, 0, 209), // pink
@@ -110,10 +110,10 @@ public class UserModel extends BaseModel {
 		this.hasHighlightedEntity = isHighlighted;
 	}
 
-	public void setHighlightedEntity(final boolean isHighlighted, final String appID, final String entityID,
-			final String originalColor) {
+	public void setHighlightedEntity(final boolean isHighlighted, final String appID, final String entityType,
+			final String entityID) {
 		this.hasHighlightedEntity = isHighlighted;
-		highlightedEntity = new HighlightingModel(isHighlighted, appID, entityID, originalColor);
+		highlightedEntity = new HighlightingModel(isHighlighted, appID, entityType, entityID);
 	}
 
 	public HighlightingModel getHighlightedEntity() {

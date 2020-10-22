@@ -194,7 +194,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		}
 
 		final JSONObject landscapeObj = new JSONObject();
-		landscapeObj.put("event", "receive_landscape");
+		landscapeObj.put("event", "landscape");
 		landscapeObj.put("systems", systemArray);
 		landscapeObj.put("nodeGroups", nodeGroupArray);
 		landscapeObj.put("openApps", appArray);
@@ -214,13 +214,13 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 			if (user.hasHighlightedEntity()) {
 				final HighlightingModel highlighted = user.getHighlightedEntity();
 				final JSONObject highlightingObj = new JSONObject();
-				highlightingObj.put("event", "receive_hightlight_update");
+				highlightingObj.put("event", "hightlight_update");
 				highlightingObj.put("time", java.lang.System.currentTimeMillis());
 				highlightingObj.put("userID", user.getId());
 				highlightingObj.put("appID", highlighted.getHighlightedApp());
+				highlightingObj.put("entityType", highlighted.getEntityType());
 				highlightingObj.put("entityID", highlighted.getHighlightedEntity());
 				highlightingObj.put("isHighlighted", true);
-				highlightingObj.put("color", highlighted.getOriginalColor());
 				enqueue(userID, highlightingObj);
 			}
 		}
@@ -273,14 +273,14 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		final String userID = user.getId();
 		// message other user about the new user
 		final JSONObject userConnectingMessage = new JSONObject();
-		userConnectingMessage.put("event", "receive_user_connecting");
+		userConnectingMessage.put("event", "user_connecting");
 		userConnectingMessage.put("id", userID);
 		broadcastAllBut(userConnectingMessage, userID);
 
 		final JSONObject selfConnectingMessage = new JSONObject();
 
 		selfConnectingMessage.put("id", userID);
-		selfConnectingMessage.put("event", "receive_self_connecting");
+		selfConnectingMessage.put("event", "self_connecting");
 		final Color color = user.getColor();
 		final JSONArray colorArray = new JSONArray(new int[] { color.getRed(), color.getGreen(), color.getBlue() });
 		selfConnectingMessage.put("color", colorArray);
@@ -294,22 +294,23 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 		synchronized (users) {
 			user = users.get(userID);
 		}
-		// message other users about the new user
-		final JSONObject connectedMessage = new JSONObject();
-		final JSONObject userObj = new JSONObject();
-		connectedMessage.put("event", "receive_user_connected");
-		userObj.put("name", user.getUserName());
-		userObj.put("id", userID);
+
 		final Color color = user.getColor();
 		final JSONArray colorArray = new JSONArray(new int[] { color.getRed(), color.getGreen(), color.getBlue() });
-		userObj.put("color", colorArray);
-		connectedMessage.put("user", userObj);
+
+		// message other users about the new user
+		final JSONObject connectedMessage = new JSONObject();
+		connectedMessage.put("event", "user_connected");
+		connectedMessage.put("name", user.getUserName());
+		connectedMessage.put("id", userID);
+		connectedMessage.put("color", colorArray);
+
 		broadcastAllBut(connectedMessage, userID);
 
 		// send user all other users' id and name
 		final JSONObject initMessage = new JSONObject();
 		final JSONArray usersArray = new JSONArray();
-		initMessage.put("event", "receive_self_connected");
+		initMessage.put("event", "self_connected");
 		synchronized (users) {
 			for (final UserModel userData : users.values()) {
 				if (userData.getState() == State.CONNECTED || userData.getState() == State.SPECTATING) {
@@ -443,28 +444,32 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 				user.setTimeOfLastMessage(java.lang.System.currentTimeMillis());
 
+				if (!event.equals("user_positions")) {
+					LOGGER.info("Event: " + message.toString());
+				}
+
 				switch (event) {
-				case "receive_user_positions":
+				case "user_positions":
 					JSONmessage.put("id", id);
 					broadcastAllBut(JSONmessage, id);
 					break;
-				case "receive_connect_request":
+				case "connect_request":
 					final String name = JSONmessage.getString("name");
 					user.setUserName(name);
 					userConnected(id, name);
 					break;
-				case "receive_user_controllers":
+				case "user_controllers":
 					onUserControllers(JSONmessage, user);
 					broadcastAllBut(JSONmessage, id);
 					break;
-				case "receive_disconnect_request":
+				case "disconnect_request":
 					disconnectUser(conn);
 					break;
-				case "receive_landscape_position":
+				case "landscape_position":
 					updateLandscapePosition(JSONmessage);
 					broadcastAllBut(JSONmessage, id);
 					break;
-				case "receive_system_update":
+				case "system_update":
 					final String systemID = JSONmessage.getString("id");
 					final Boolean systemOpened = JSONmessage.getBoolean("isOpen");
 					systemState.put(systemID, systemOpened);
@@ -472,7 +477,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					// forward update from user to all other users
 					broadcastAllBut(JSONmessage, id);
 					break;
-				case "receive_nodegroup_update":
+				case "nodegroup_update":
 					final String nodeGroupID = JSONmessage.getString("id");
 					final Boolean nodeGroupOpened = JSONmessage.getBoolean("isOpen");
 					nodeGroupState.put(nodeGroupID, nodeGroupOpened);
@@ -480,27 +485,27 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 					// forward update from user to all other users
 					broadcastAllBut(JSONmessage, id);
 					break;
-				case "receive_app_position":
+				case "app_translation":
 					broadcastAllBut(JSONmessage, id);
 					break;
-				case "receive_app_opened":
+				case "app_opened":
 					updateOpenApp(JSONmessage);
 					broadcastAllBut(JSONmessage, id);
 					break;
-				case "receive_app_closed":
+				case "app_closed":
 					final String applicationID = JSONmessage.getString("id");
 					apps.remove(applicationID);
 					broadcastAllBut(JSONmessage, id);
 					break;
-				case "receive_app_binded":
-					bindingApp(JSONmessage, id);
+				case "app_grabbed":
+					grabbingApp(JSONmessage, id);
 					break;
-				case "receive_app_released":
+				case "app_released":
 					updateOpenApp(JSONmessage);
-					apps.get(JSONmessage.getString("id")).setBound(false);
+					apps.get(JSONmessage.getString("id")).setGrabbed(false);
 					broadcastAllBut(JSONmessage, id);
 					break;
-				case "receive_component_update":
+				case "component_update":
 					if (JSONmessage.getBoolean("isFoundation")) {
 						apps.get(JSONmessage.getString("appID")).closeAllComponents();
 					} else if (JSONmessage.getBoolean("isOpened")) {
@@ -511,11 +516,12 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 
 					broadcastAllBut(JSONmessage, id);
 					break;
-				case "receive_hightlight_update":
+				case "hightlighting_update":
+					JSONmessage.put("userID", id);
 					updateHighlighting(JSONmessage, id);
 					broadcastAllBut(JSONmessage, id);
 					break;
-				case "receive_spectating_update":
+				case "spectating_update":
 					if (JSONmessage.getBoolean("isSpectating"))
 						users.get(id).setState(State.SPECTATING);
 					else
@@ -535,17 +541,17 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 			return;
 		}
 		final String appID = msg.getString("appID");
+		final String entityType = msg.getString("entityType");
 		final String entityID = msg.getString("entityID");
-		final String originalColor = msg.getString("color");
 
-		// overwrite highlighting of other users (if they highighted same entity)
+		// Overwrite highlighting of other users (if they highighted same entity)
 		for (final UserModel otherUser : users.values()) {
 			if (otherUser.hasHighlightedEntity() && otherUser.getHighlightedEntity().getHighlightedApp().equals(appID)
 					&& otherUser.getHighlightedEntity().getHighlightedEntity().equals(entityID)) {
 				otherUser.setHighlighted(false);
 			}
 		}
-		user.setHighlightedEntity(isHighlighted, appID, entityID, originalColor);
+		user.setHighlightedEntity(isHighlighted, appID, entityType, entityID);
 	}
 
 	private void onUserControllers(final JSONObject JSONmessage, final UserModel user) {
@@ -559,28 +565,26 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 			}
 		}
 		if (JSONmessage.has("disconnect")) {
-			final JSONArray controllers = JSONmessage.getJSONArray("disconnect");
-			for (int j = 0; j < controllers.length(); j++) {
-				if (controllers.get(j) == "controller1") {
-					user.getController1().setName(null);
-				}
-				if (controllers.get(j) == "controller2") {
-					user.getController2().setName(null);
-				}
+			final JSONObject controllers = JSONmessage.getJSONObject("disconnect");
+			if (controllers.has("controller1")) {
+				user.getController1().setName(null);
+			}
+			if (controllers.has("controller2")) {
+				user.getController2().setName(null);
 			}
 		}
 		JSONmessage.put("id", user.getId());
 	}
 
-	private void bindingApp(final JSONObject msg, final String userID) {
+	private void grabbingApp(final JSONObject msg, final String userID) {
 		msg.put("userID", userID);
 		final String appID = msg.getString("appID");
-		final boolean isBound = apps.get(appID).isBound();
-		if (isBound) {
+		final boolean isGrabbed = apps.get(appID).isGrabbed();
+		if (isGrabbed) {
 			// TODO: send error msg to user
 		} else {
-			apps.get(appID).setBound(true);
-			apps.get(appID).setBoundByUser(userID);
+			apps.get(appID).setGrabbed(true);
+			apps.get(appID).setGrabbedByUser(userID);
 			broadcastAllBut(msg, userID);
 		}
 	}
@@ -601,7 +605,7 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
 				conn.close();
 
 			final JSONObject disconnectMessage = new JSONObject();
-			disconnectMessage.put("event", "receive_user_disconnect");
+			disconnectMessage.put("event", "user_disconnect");
 			disconnectMessage.put("id", clientID);
 			broadcastAllBut(disconnectMessage, clientID);
 
