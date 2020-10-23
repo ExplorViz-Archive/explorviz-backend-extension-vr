@@ -300,8 +300,8 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
     selfConnectingMessage.put("id", userID);
     selfConnectingMessage.put("event", "self_connecting");
     final Color color = user.getColor();
-    final JSONArray colorArray =
-        new JSONArray(new int[] {color.getRed(), color.getGreen(), color.getBlue()});
+    final JSONArray colorArray = new JSONArray(
+        new double[] {color.getRed() / 255.0, color.getGreen() / 255.0, color.getBlue() / 255.0});
     selfConnectingMessage.put("color", colorArray);
 
     enqueue(userID, selfConnectingMessage);
@@ -315,8 +315,8 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
     }
 
     final Color color = user.getColor();
-    final JSONArray colorArray =
-        new JSONArray(new int[] {color.getRed(), color.getGreen(), color.getBlue()});
+    final JSONArray colorArray = new JSONArray(
+        new double[] {color.getRed() / 255.0, color.getGreen() / 255.0, color.getBlue() / 255.0});
 
     // message other users about the new user
     final JSONObject connectedMessage = new JSONObject();
@@ -338,8 +338,8 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
           userObject.put("id", userData.getId());
           userObject.put("name", userData.getUserName());
           final Color userColor = userData.getColor();
-          final JSONArray userColorArray = new JSONArray(
-              new int[] {userColor.getRed(), userColor.getGreen(), userColor.getBlue()});
+          final JSONArray userColorArray = new JSONArray(new double[] {userColor.getRed() / 255.0,
+              userColor.getGreen() / 255.0, userColor.getBlue() / 255.0});
           userObject.put("color", userColorArray);
           final JSONObject controllers = new JSONObject();
           controllers.put("controller1", userData.getController1().getName());
