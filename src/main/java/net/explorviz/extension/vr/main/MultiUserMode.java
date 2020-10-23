@@ -640,6 +640,20 @@ public class MultiUserMode extends WebSocketServer implements Runnable {
       synchronized (users) {
         final UserModel user = users.get(clientID);
         if (user != null) {
+          // remove highlighting for others
+          if (user.hasHighlightedEntity()) {
+            final HighlightingModel highlighted = user.getHighlightedEntity();
+            final JSONObject highlightingObj = new JSONObject();
+            highlightingObj.put("event", "hightlighting_update");
+            highlightingObj.put("time", java.lang.System.currentTimeMillis());
+            highlightingObj.put("userID", clientID);
+            highlightingObj.put("appID", highlighted.getHighlightedApp());
+            highlightingObj.put("entityType", highlighted.getEntityType());
+            highlightingObj.put("entityID", highlighted.getHighlightedEntity());
+            highlightingObj.put("isHighlighted", false);
+            this.broadcastAllBut(highlightingObj, clientID);
+          }
+
           user.removeColor();
           users.remove(clientID);
         }
