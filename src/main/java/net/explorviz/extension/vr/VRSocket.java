@@ -1,5 +1,7 @@
 package net.explorviz.extension.vr;
 
+import java.util.List;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -11,7 +13,10 @@ import javax.websocket.server.ServerEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ServerEndpoint("/v2/vr")
+import net.explorviz.extension.vr.messages.VRMessage;
+import net.explorviz.extension.vr.messages.VRMessageDecoder;
+
+@ServerEndpoint(value = "/v2/vr", decoders = {VRMessageDecoder.class})
 @ApplicationScoped
 public class VRSocket {
     
@@ -33,7 +38,7 @@ public class VRSocket {
     }
 
     @OnMessage
-    public void onMessage(String message) {
-        LOGGER.debug("received message: {}", message);
+    public void onMessage(List<VRMessage> messages) {
+        LOGGER.debug("received message: {}", messages);
     }
 }
