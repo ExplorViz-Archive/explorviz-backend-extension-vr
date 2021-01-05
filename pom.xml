@@ -1,24 +1,22 @@
 <?xml version="1.0"?>
-<project
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
-  xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <groupId>net.explorviz.extension.vr</groupId>
   <artifactId>explorviz-backend-extension-vr</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <properties>
-    <surefire-plugin.version>2.22.1</surefire-plugin.version>
-    <maven.compiler.target>11</maven.compiler.target>
-    <quarkus.platform.version>1.10.5.Final</quarkus.platform.version>
-    <maven.compiler.source>11</maven.compiler.source>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <maven.compiler.parameters>true</maven.compiler.parameters>
-    <quarkus-plugin.version>1.10.5.Final</quarkus-plugin.version>
     <compiler-plugin.version>3.8.1</compiler-plugin.version>
+    <maven.compiler.parameters>true</maven.compiler.parameters>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <quarkus-plugin.version>1.10.5.Final</quarkus-plugin.version>
+    <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
+    <quarkus.platform.version>1.10.5.Final</quarkus.platform.version>
+    <surefire-plugin.version>2.22.1</surefire-plugin.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -50,8 +48,41 @@
       <artifactId>rest-assured</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-undertow-websockets</artifactId>
+    </dependency>
   </dependencies>
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.eclipse.m2e</groupId>
+          <artifactId>lifecycle-mapping</artifactId>
+          <version>1.0.0</version>
+          <configuration>
+            <lifecycleMappingMetadata>
+              <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-maven-plugin</artifactId>
+                    <versionRange>[1.10.5.Final,)</versionRange>
+                    <goals>
+                      <goal>generate-code-tests</goal>
+                      <goal>generate-code</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore></ignore>
+                  </action>
+                </pluginExecution>
+              </pluginExecutions>
+            </lifecycleMappingMetadata>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
       <plugin>
         <groupId>io.quarkus</groupId>
@@ -83,41 +114,6 @@
         </configuration>
       </plugin>
     </plugins>
-    <pluginManagement>
-      <plugins>
-        <!--This plugin's configuration is used to store Eclipse m2e settings 
-          only. It has no influence on the Maven build itself. -->
-        <plugin>
-          <groupId>org.eclipse.m2e</groupId>
-          <artifactId>lifecycle-mapping</artifactId>
-          <version>1.0.0</version>
-          <configuration>
-            <lifecycleMappingMetadata>
-              <pluginExecutions>
-                <pluginExecution>
-                  <pluginExecutionFilter>
-                    <groupId>io.quarkus</groupId>
-                    <artifactId>
-                      quarkus-maven-plugin
-                    </artifactId>
-                    <versionRange>
-                      [1.10.5.Final,)
-                    </versionRange>
-                    <goals>
-                      <goal>generate-code-tests</goal>
-                      <goal>generate-code</goal>
-                    </goals>
-                  </pluginExecutionFilter>
-                  <action>
-                    <ignore></ignore>
-                  </action>
-                </pluginExecution>
-              </pluginExecutions>
-            </lifecycleMappingMetadata>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
   </build>
   <profiles>
     <profile>
